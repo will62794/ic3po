@@ -1,0 +1,41 @@
+#lang ivy1.7
+
+#
+# Simple leader election in Ivy that is based on ordered terms/epochs.
+# 
+
+type server
+type term
+
+# Less than relation on terms.
+relation lt(X:term, Y:term)
+
+axiom lt(X:term,Y) & lt(Y,Z) -> lt(X,Z)
+axiom ~lt(X:term,X)
+axiom lt(X:term,Y) | (X = Y) | lt(Y,X)
+
+# A server's current term.
+function currentTerm(X:server) : term
+
+# Is server X currently a leader.
+function leader(X:server) : bool
+
+individual nextTerm : term
+
+after init {
+    leader(X) := false;
+}
+
+# Server 'i' becomes leader by using the next term.
+action becomeLeader(i:server, nextTermAlloc: term) = {
+    require lt(nextTerm, nextTermAlloc);
+    leader(i) := true;
+    currentTerm(i) := nextTerm;
+    nextTerm := nextTermAlloc;
+}
+export becomeLeader
+
+invariant [unique_leader] forall X,Y. (leader(X) & leader(Y) & ~(X=Y)) -> ~(currentTerm(X) = currentTerm(Y))
+
+# Strengthening assertion to make the invariant inductive.
+#invariant [a1] forall X. leader(X) -> lt(currentTerm(X), nextTerm)
