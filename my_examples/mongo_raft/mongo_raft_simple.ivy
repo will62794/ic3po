@@ -1,0 +1,72 @@
+#lang ivy1.7
+
+#
+# Simplified version of MongoDB Raft protocol in Ivy
+#
+
+
+type server
+type term
+type quorum
+type state_t
+
+#
+# Axioms on the sorts used in the protocol.
+#
+
+individual primary : state_t
+individual secondary : state_t
+
+axiom ~(primary = secondary)
+
+# Any two quorums must overlap.
+relation member(N:server, Q:quorum)
+axiom forall Q1:quorum, Q2:quorum. exists N:server. member(N, Q1) & member(N, Q2)
+
+# Less than relation on terms to provide total order.
+relation lt(X:term, Y:term)
+axiom lt(X:term,Y) & lt(Y,Z) -> lt(X,Z)
+axiom ~lt(X:term,X)
+axiom lt(X:term,Y) | (X = Y) | lt(Y,X)
+
+#
+# State variables.
+#
+
+# VARIABLE currentTerm
+# VARIABLE state
+# VARIABLE log
+# VARIABLE config
+# VARIABLE committed
+
+# A server's current term.
+function currentTerm(X:server) : term
+
+function state(X:server) : state_t
+
+after init {
+    state(X) := secondary;
+}
+
+# Server 'i' becomes leader by using the next term.
+action becomeLeader(i:server, q: quorum, newTerm: term) = {
+    require lt(currentTerm(i), newTerm);
+    require forall X. member(X,q) -> lt(currentTerm(X), newTerm);
+#    state(i) := primary;
+    currentTerm(i) := newTerm;
+    state(J) := primary if J=i else secondary if member(J,q) else state(J);
+}
+export becomeLeader
+
+invariant [unique_leader] forall X,Y. (state(X)=primary & state(Y)=primary & ~(X=Y)) -> ~(currentTerm(X) = currentTerm(Y))
+
+#invariant [a1] forall X. (state(X)=primary) -> exists Y:quorum. forall Z. member(Z,Y) -> (currentTerm(Z) = currentTerm(X)) | lt(currentTerm(X), currentTerm(Z))
+
+
+# Strengthening assertion to make the invariant inductive.
+#invariant [a1] forall X. leader(X) -> lt(currentTerm(X), nextTerm)
+
+interpret server -> {0..1}
+interpret state_t -> {0..1}
+interpret term -> {0..4}
+
