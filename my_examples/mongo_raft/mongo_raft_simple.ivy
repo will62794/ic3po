@@ -8,16 +8,16 @@
 type server
 type term
 type quorum
-type state_t = {primary, secondary}
+type state_t# = {primary, secondary}
 
 #
 # Axioms on the sorts used in the protocol.
 #
 
-#individual primary : state_t
-#individual secondary : state_t
+individual primary : state_t
+individual secondary : state_t
 
-#axiom ~(primary = secondary)
+axiom ~(primary = secondary)
 
 # Any two quorums must overlap.
 relation member(N:server, Q:quorum)
@@ -66,7 +66,7 @@ export becomeLeader
 invariant [unique_leader_per_term] ~(state(X)=primary & state(Y)=primary & ~(X=Y) & (currentTerm(X)=currentTerm(Y)))
 
 # Strengthening assertions 
-invariant [leader_implies_quorum_at_term] (state(X) = primary) -> (exists Y:quorum. member(Z,Y) -> (currentTerm(Z) = currentTerm(X)) | lt(currentTerm(X), currentTerm(Z)))
+#invariant [leader_implies_quorum_at_term] (state(X) = primary) -> (exists Y:quorum. member(Z,Y) -> (currentTerm(Z) = currentTerm(X)) | lt(currentTerm(X), currentTerm(Z)))
 
 #interpret server -> {0..2}
 #interpret term -> bv[4]
