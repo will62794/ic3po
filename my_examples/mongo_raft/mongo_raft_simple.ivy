@@ -8,16 +8,16 @@
 type server
 type term
 type quorum
-type state_t
+type state_t = {primary, secondary}
 
 #
 # Axioms on the sorts used in the protocol.
 #
 
-individual primary : state_t
-individual secondary : state_t
+#individual primary : state_t
+#individual secondary : state_t
 
-axiom ~(primary = secondary)
+#axiom ~(primary = secondary)
 
 # Any two quorums must overlap.
 relation member(N:server, Q:quorum)
@@ -42,6 +42,7 @@ axiom lt(X:term,Y) | (X = Y) | lt(Y,X)
 # A server's current term.
 function currentTerm(X:server) : term
 
+# A server's current state.
 function state(X:server) : state_t
 
 after init {
@@ -50,23 +51,25 @@ after init {
 
 # Server 'i' becomes leader by using the next term.
 action becomeLeader(i:server, q: quorum, newTerm: term) = {
-    require lt(currentTerm(i), newTerm);
+    require member(i,q); # primary votes for itself.
+    require lt(currentTerm(i), newTerm); # candidate is in newer term.
+
+    # Must garner a quorum of voters that haven't voted in this term.
     require forall X. member(X,q) -> lt(currentTerm(X), newTerm);
-#    state(i) := primary;
-    currentTerm(i) := newTerm;
-    state(J) := primary if J=i else secondary if member(J,q) else state(J);
+
+    # Update term and state of servers.
+    currentTerm(J) := newTerm if member(J,q) else currentTerm(J);
+    state(J) := primary if J=i else (secondary if member(J,q) else state(J));
 }
 export becomeLeader
 
-invariant [unique_leader] forall X,Y. (state(X)=primary & state(Y)=primary & ~(X=Y)) -> ~(currentTerm(X) = currentTerm(Y))
+invariant [unique_leader_per_term] ~(state(X)=primary & state(Y)=primary & ~(X=Y) & (currentTerm(X)=currentTerm(Y)))
 
-#invariant [a1] forall X. (state(X)=primary) -> exists Y:quorum. forall Z. member(Z,Y) -> (currentTerm(Z) = currentTerm(X)) | lt(currentTerm(X), currentTerm(Z))
+# Strengthening assertions 
+invariant [leader_implies_quorum_at_term] (state(X) = primary) -> (exists Y:quorum. member(Z,Y) -> (currentTerm(Z) = currentTerm(X)) | lt(currentTerm(X), currentTerm(Z)))
 
+#interpret server -> {0..2}
+#interpret term -> bv[4]
 
-# Strengthening assertion to make the invariant inductive.
-#invariant [a1] forall X. leader(X) -> lt(currentTerm(X), nextTerm)
-
-interpret server -> {0..1}
-interpret state_t -> {0..1}
-interpret term -> {0..4}
+#interpret quorum -> {0..5}
 

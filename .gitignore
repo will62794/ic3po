@@ -18,8 +18,10 @@ ivybench/final/*/logs/*
 */*.fuse_*
 */*.csv
 xtras/fail*.log
+results/
 
 # But not these files
 !.gitignore
 !.travis/*
 !.travis.yml
+*.DS_Store
