@@ -39,7 +39,7 @@ A1_Human ==
 
 \* IC3PO generated inductive strengthening assertion.
 A1_IC3PO == 
-    \forall Q \in Quorums :
+    \A Q \in Quorums :
     \E s0 \in Server :
     \A s1 \in Server :
     \A t0,t1 \in Terms :
