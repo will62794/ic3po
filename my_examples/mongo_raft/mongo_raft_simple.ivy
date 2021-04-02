@@ -8,16 +8,16 @@
 type server
 type term
 type quorum
-type state_t# = {primary, secondary}
+#type state_t  = {primary, secondary}
 
 #
 # Axioms on the sorts used in the protocol.
 #
 
-individual primary : state_t
-individual secondary : state_t
+#individual primary : state_t
+#individual secondary : state_t
 
-axiom ~(primary = secondary)
+#axiom ~(primary = secondary)
 
 # Any two quorums must overlap.
 relation member(N:server, Q:quorum)
@@ -28,6 +28,10 @@ relation lt(X:term, Y:term)
 axiom lt(X:term,Y) & lt(Y,Z) -> lt(X,Z)
 axiom ~lt(X:term,X)
 axiom lt(X:term,Y) | (X = Y) | lt(Y,X)
+axiom X:term = 0 | lt(0, X)
+
+function lte(A:term,B:term):bool
+definition lte(A,B) = lt(A,B) | (A = B)
 
 #
 # State variables.
@@ -42,34 +46,47 @@ axiom lt(X:term,Y) | (X = Y) | lt(Y,X)
 # A server's current term.
 function currentTerm(X:server) : term
 
-# A server's current state.
-function state(X:server) : state_t
+# Whether a server is currently acting as a leader.
+#function state(X:server) : state_t
+relation leader(X:server)
 
 after init {
-    state(X) := secondary;
+    leader(X) := false;
+    currentTerm(X) := 0;
+
+    # state(X, S) := true if S = secondary else false;
+    # state(X, primary) := false;
 }
 
 # Server 'i' becomes leader by using the next term.
 action becomeLeader(i:server, q: quorum, newTerm: term) = {
-    require member(i,q); # primary votes for itself.
-    require lt(currentTerm(i), newTerm); # candidate is in newer term.
-
-    # Must garner a quorum of voters that haven't voted in this term.
+    # Must garner a quorum of voters that haven't voted in this term,
+    # and primary votes for itself.
+    require lt(currentTerm(i), newTerm);
+    require member(i,q);
+    require lt(currentTerm(i), newTerm);
     require forall X. member(X,q) -> lt(currentTerm(X), newTerm);
 
     # Update term and state of servers.
     currentTerm(J) := newTerm if member(J,q) else currentTerm(J);
-    state(J) := primary if J=i else (secondary if member(J,q) else state(J));
+    leader(J) := true if J=i else (false if member(J,q) else leader(J));
 }
 export becomeLeader
 
-invariant [unique_leader_per_term] ~(state(X)=primary & state(Y)=primary & ~(X=Y) & (currentTerm(X)=currentTerm(Y)))
+#invariant [unique_leader_per_term] ~(state(X,primary) & state(Y,primary) & ~(X=Y) & (currentTerm(X)=currentTerm(Y)))
+invariant [unique_leader_per_term] (leader(X) & leader(Y) & ~(X=Y)) -> ~(currentTerm(X)=currentTerm(Y))
+
 
 # Strengthening assertions 
+
+# invariant [leader_implies_quorum_at_term] leader(X) -> (exists Y:quorum. (member(Z,Y) -> lte(currentTerm(Z), currentTerm(X))))
+#invariant [leader_implies_quorum_at_term] leader(X) -> (exists Y:quorum. (member(Z,Y) -> true))
+
+
 #invariant [leader_implies_quorum_at_term] (state(X) = primary) -> (exists Y:quorum. member(Z,Y) -> (currentTerm(Z) = currentTerm(X)) | lt(currentTerm(X), currentTerm(Z)))
 
-#interpret server -> {0..2}
-#interpret term -> bv[4]
 
-#interpret quorum -> {0..5}
+#interpret server -> {0..1}
+#interpret term -> {0..2}
+#interpret quorum -> {0..2}
 
