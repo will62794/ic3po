@@ -19,6 +19,7 @@ ivybench/final/*/logs/*
 */*.csv
 xtras/fail*.log
 results/
+states/
 
 # But not these files
 !.gitignore
