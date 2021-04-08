@@ -83,6 +83,7 @@ action becomeLeader(i:server, q: quorum, newTerm: term) = {
 }
 export becomeLeader
 
+# Leader 'i' writes down a new entry.
 action clientRequest(i:server, nextInd:index) = {
     require leader(i);
     require indlt(loglen(i),nextInd); 
@@ -91,13 +92,26 @@ action clientRequest(i:server, nextInd:index) = {
 }
 export clientRequest
 
-# invariant [election_safety] (leader(X) & leader(Y) & ~(X=Y)) -> ~(currentTerm(X)=currentTerm(Y))
+# Server 'i' sends a log entry to server 'j'.
+action getEntries(i:server, j:server, nextInd:index) = {
+    require indlt(loglen(j), loglen(i));
+    require indlt(loglen(j), nextInd);
+    # Log consistency check. An empty log can always receive log entries.
+    require true if (loglen(j)=indzero) else (log(j,loglen(j)) = log(i, loglen(i)));
+    log(j, nextInd) := log(i, nextInd);
+    loglen(j) := nextInd;
+}
 
 #
-# Attempting to prove this invariant. Need to make sure the definition is correct first, though.
+# Some basic lemma invariants of Raft.
 #
-invariant [monotonic_log_terms] (indlt(I,J) & ~(J=indzero) & indlt(J,loglen(X)) & ~(log(X,J)=0)) -> lte(log(X,I),log(X,J))
-# invariant [monotonic_log_terms] lte(log(X,I),log(X,J))
+
+# invariant [election_safety] (leader(X) & leader(Y) & ~(X=Y)) -> ~(currentTerm(X)=currentTerm(Y))
+
+# invariant [monotonic_log_terms] (indlt(I,J) & ~(J=indzero) & indlt(J,loglen(X)) & ~(log(X,J)=0)) -> lte(log(X,I),log(X,J))
+
+# An (index, term) pair uniquely identifies log prefix.
+invariant [log_matching] (log(X,I) = log(Y,I) & indlt(J,I)) -> (log(X,J) = log(X,J))
 
 
 #
