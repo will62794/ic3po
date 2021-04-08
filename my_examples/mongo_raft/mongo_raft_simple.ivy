@@ -4,20 +4,13 @@
 # Simplified version of MongoDB Raft protocol in Ivy
 #
 
-
 type server
 type term
 type quorum
-#type state_t  = {primary, secondary}
 
 #
 # Axioms on the sorts used in the protocol.
 #
-
-#individual primary : state_t
-#individual secondary : state_t
-
-#axiom ~(primary = secondary)
 
 # Any two quorums must overlap.
 relation member(N:server, Q:quorum)
@@ -53,9 +46,6 @@ relation leader(X:server)
 after init {
     leader(X) := false;
     currentTerm(X) := 0;
-
-    # state(X, S) := true if S = secondary else false;
-    # state(X, primary) := false;
 }
 
 # Server 'i' becomes leader by using the next term.
@@ -73,7 +63,7 @@ action becomeLeader(i:server, q: quorum, newTerm: term) = {
 }
 export becomeLeader
 
-invariant [unique_leader_per_term] (leader(X) & leader(Y) & ~(X=Y)) -> ~(currentTerm(X)=currentTerm(Y))
+invariant [election_safety] (leader(X) & leader(Y) & ~(X=Y)) -> ~(currentTerm(X)=currentTerm(Y))
 
 
 #
