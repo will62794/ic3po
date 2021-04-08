@@ -73,20 +73,21 @@ action becomeLeader(i:server, q: quorum, newTerm: term) = {
 }
 export becomeLeader
 
-#invariant [unique_leader_per_term] ~(state(X,primary) & state(Y,primary) & ~(X=Y) & (currentTerm(X)=currentTerm(Y)))
 invariant [unique_leader_per_term] (leader(X) & leader(Y) & ~(X=Y)) -> ~(currentTerm(X)=currentTerm(Y))
 
 
-# Strengthening assertions 
+#
+# Manually generated inductive invariant 
+#
 
 # invariant [leader_implies_quorum_at_term] leader(X) -> (exists Y:quorum. (member(Z,Y) -> lte(currentTerm(Z), currentTerm(X))))
-#invariant [leader_implies_quorum_at_term] leader(X) -> (exists Y:quorum. (member(Z,Y) -> true))
+# invariant [leader_implies_quorum_at_term] (state(X) = primary) -> (exists Y:quorum. member(Z,Y) -> (currentTerm(Z) = currentTerm(X)) | lt(currentTerm(X), currentTerm(Z)))
 
+ 
+#
+# IC3PO generated inductive invariants.
+#
 
-#invariant [leader_implies_quorum_at_term] (state(X) = primary) -> (exists Y:quorum. member(Z,Y) -> (currentTerm(Z) = currentTerm(X)) | lt(currentTerm(X), currentTerm(Z)))
-
-
-## IC3PO generated inductive invariant.
 # invariant [ic3po_prop1]	(forall Y, X . ((leader(X) & leader(Y) & ~(X = Y)) -> ~(currentTerm(X) = currentTerm(Y))))
 # invariant [ic3po_global1]	(forall Q0 . (exists S0 . (forall S1, T0, T1 . ((((S1 = S0) | (currentTerm(S0) = T0)) & (currentTerm(S1) = T1)) -> ((T0 = T1) | lt(T1, T0) | member(S1, Q0))))))
 
