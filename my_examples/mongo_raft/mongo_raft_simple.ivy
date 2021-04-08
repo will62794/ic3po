@@ -61,27 +61,41 @@ function log(X:server, I:index):term
 # The current length of the log on server X.
 function loglen(X:server) : index
 
+# The set of committed log entries.
+relation committed(I:index, T:term)
+
 after init {
     leader(X) := false;
     currentTerm(X) := 0;
     loglen(X) := indzero;
     log(X,I) := 0;
+    committed(I,T) := false;
 }
+
+# Term of the latest log entry in the log of 'i'.
+# definition lastTerm(x) = log(x, loglen(x))
+
+# Does node 'x' have a newer or equal log than node 'y'
+# definition logGTE(x,y) = (loglen(Y) = 0) | (lastTerm(y) = lastTerm(x) & indlt(loglen(y), loglen(x))) | lt(lastTerm(y),lastTerm(x))
+
+# Can server 'i' vote for server 'j' in term 't'.
+#definition canVoteFor(I,J) = true #lt(currentTerm(j), t) #& logGTE(j,i)
 
 # Server 'i' becomes leader by using the next term.
-action becomeLeader(i:server, q: quorum, newTerm: term) = {
+action becomeLeader(i:server, q:quorum, newterm:term) = {
     # Must garner a quorum of voters that haven't voted in this term,
     # and primary votes for itself.
-    require lt(currentTerm(i), newTerm);
+    require ~(newterm = 0);
+    require lt(currentTerm(i), newterm);
     require member(i,q);
-    require lt(currentTerm(i), newTerm);
-    require forall X. member(X,q) -> lt(currentTerm(X), newTerm);
+    require forall X. member(X,q) -> lt(currentTerm(X), newterm);
+    # Log check (TODO)
+    #require forall X. member(X,q) -> (loglen(Y) = 0) | ((log(Y, loglen(Y)) = log(X, loglen(X))) & indlt(loglen(Y), loglen(X))) | lt(log(Y, loglen(Y)),log(X, loglen(X)));
 
-    # Update term and state of servers.
-    currentTerm(J) := newTerm if member(J,q) else currentTerm(J);
+    # Update term and state of servers. /
+    currentTerm(J) := newterm if member(J,q) else currentTerm(J);
     leader(J) := true if J=i else (false if member(J,q) else leader(J));
 }
-export becomeLeader
 
 # Leader 'i' writes down a new entry.
 action clientRequest(i:server, nextInd:index) = {
@@ -90,10 +104,11 @@ action clientRequest(i:server, nextInd:index) = {
     log(i, nextInd) := currentTerm(i);
     loglen(i) := nextInd;
 }
-export clientRequest
 
 # Server 'i' sends a log entry to server 'j'.
 action getEntries(i:server, j:server, nextInd:index) = {
+    require ~(indzero = loglen(i));
+    require indlt(indzero, loglen(i));
     require indlt(loglen(j), loglen(i));
     require indlt(loglen(j), nextInd);
     # Log consistency check. An empty log can always receive log entries.
@@ -102,16 +117,40 @@ action getEntries(i:server, j:server, nextInd:index) = {
     loglen(j) := nextInd;
 }
 
+# Leader i commits its latest entry.
+action commitEntry(i:server, q:quorum) = {
+    require leader(i);
+    require ~(loglen(i) = indzero);
+    # require indlt(indzero, loglen(i));
+    # All members in quorum have the entry and are in term of the primary.
+    require forall X. member(X,q) -> currentTerm(X) = currentTerm(i);
+    require forall X. member(X,q) -> (indlte(loglen(X), loglen(i))) & (log(X, loglen(i)) = log(i, loglen(i)));
+    committed(loglen(i), log(i, loglen(i))) := true;
+}
+
+export becomeLeader
+export clientRequest
+export getEntries
+export commitEntry
+
 #
 # Some basic lemma invariants of Raft.
 #
 
 # invariant [election_safety] (leader(X) & leader(Y) & ~(X=Y)) -> ~(currentTerm(X)=currentTerm(Y))
+# invariant [election_safety_a1] (leader(X) & currentTerm(X)=T) -> exists Q:quorum. member(Y,Q) -> lte(currentTerm(X), currentTerm(Y))
+
 
 # invariant [monotonic_log_terms] (indlt(I,J) & ~(J=indzero) & indlt(J,loglen(X)) & ~(log(X,J)=0)) -> lte(log(X,I),log(X,J))
 
 # An (index, term) pair uniquely identifies log prefix.
-invariant [log_matching] (log(X,I) = log(Y,I) & indlt(J,I)) -> (log(X,J) = log(X,J))
+# invariant [log_matching] (log(X,I) = log(Y,I) & indlt(J,I)) -> (log(X,J) = log(X,J))
+
+# When a leader gets elected, it must have all entries committed in previous terms.
+invariant [leader_completeness] (committed(I,T) & leader(X) & lt(T, currentTerm(X))) -> log(X,I) = T
+
+# At most one unique log entry can be committed at a particular log index.
+# invariant [sm_safety] (committed(I,T0) & committed(J,T1) & (I=J)) -> (T0 = T1)
 
 
 #
@@ -130,8 +169,12 @@ invariant [log_matching] (log(X,I) = log(Y,I) & indlt(J,I)) -> (log(X,J) = log(X
 # invariant [ic3po_global1]	(forall Q0 . (exists S0 . (forall S1, T0, T1 . ((((S1 = S0) | (currentTerm(S0) = T0)) & (currentTerm(S1) = T1)) -> ((T0 = T1) | lt(T1, T0) | member(S1, Q0))))))
 
 
-# interpret server -> {0..0}
-# interpret term -> {0..2}
-# interpret quorum -> {0..2}
-# interpret index -> {0..1}
+# interpret server -> {0..1}
+# interpret term -> bv[2]
+# interpret quorum -> {0..1}
+# interpret index -> bv[1]
+
+# {0..1}
+# {0..1}
+# {0..1}
 
