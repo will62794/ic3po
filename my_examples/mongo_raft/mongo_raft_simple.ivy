@@ -7,6 +7,7 @@
 type server
 type term
 type quorum
+type index
 
 #
 # Axioms on the sorts used in the protocol.
@@ -26,6 +27,17 @@ axiom X:term = 0 | lt(0, X)
 function lte(A:term,B:term):bool
 definition lte(A,B) = lt(A,B) | (A = B)
 
+# Less than relation on log indices to provide total order.
+individual indzero:index
+relation indlt(X:index, Y:index)
+axiom indlt(X:index,Y) & indlt(Y,Z) -> indlt(X,Z)
+axiom ~indlt(X:index,X)
+axiom indlt(X:index,Y) | (X = Y) | indlt(Y,X)
+axiom X:index = indzero | indlt(indzero, X)
+
+function indlte(A:index,B:index):bool
+definition indlte(A,B) = indlt(A,B) | (A = B)
+
 #
 # State variables.
 #
@@ -43,9 +55,17 @@ function currentTerm(X:server) : term
 #function state(X:server) : state_t
 relation leader(X:server)
 
+# The logs of each server.
+function log(X:server, I:index):term
+
+# The current length of the log on server X.
+function loglen(X:server) : index
+
 after init {
     leader(X) := false;
     currentTerm(X) := 0;
+    loglen(X) := indzero;
+    log(X,I) := 0;
 }
 
 # Server 'i' becomes leader by using the next term.
@@ -63,7 +83,21 @@ action becomeLeader(i:server, q: quorum, newTerm: term) = {
 }
 export becomeLeader
 
-invariant [election_safety] (leader(X) & leader(Y) & ~(X=Y)) -> ~(currentTerm(X)=currentTerm(Y))
+action clientRequest(i:server, nextInd:index) = {
+    require leader(i);
+    require indlt(loglen(i),nextInd); 
+    log(i, nextInd) := currentTerm(i);
+    loglen(i) := nextInd;
+}
+export clientRequest
+
+# invariant [election_safety] (leader(X) & leader(Y) & ~(X=Y)) -> ~(currentTerm(X)=currentTerm(Y))
+
+#
+# Attempting to prove this invariant. Need to make sure the definition is correct first, though.
+#
+invariant [monotonic_log_terms] (indlt(I,J) & ~(J=indzero) & indlt(J,loglen(X)) & ~(log(X,J)=0)) -> lte(log(X,I),log(X,J))
+# invariant [monotonic_log_terms] lte(log(X,I),log(X,J))
 
 
 #
@@ -82,7 +116,8 @@ invariant [election_safety] (leader(X) & leader(Y) & ~(X=Y)) -> ~(currentTerm(X)
 # invariant [ic3po_global1]	(forall Q0 . (exists S0 . (forall S1, T0, T1 . ((((S1 = S0) | (currentTerm(S0) = T0)) & (currentTerm(S1) = T1)) -> ((T0 = T1) | lt(T1, T0) | member(S1, Q0))))))
 
 
-#interpret server -> {0..1}
-#interpret term -> {0..2}
-#interpret quorum -> {0..2}
+# interpret server -> {0..0}
+# interpret term -> {0..2}
+# interpret quorum -> {0..2}
+# interpret index -> {0..1}
 
