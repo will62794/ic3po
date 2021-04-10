@@ -14,6 +14,9 @@ axiom lt(X:term,Y) & lt(Y,Z) -> lt(X,Z)
 axiom ~lt(X:term,X)
 axiom lt(X:term,Y) | (X = Y) | lt(Y,X)
 
+individual zero:term
+axiom (X:term = zero) | lt(zero, X)
+
 # A server's current term.
 function currentTerm(X:server) : term
 
@@ -24,6 +27,8 @@ individual nextTerm : term
 
 after init {
     leader(X) := false;
+    currentTerm(X) := zero;
+    nextTerm := zero;
 }
 
 # Server 'i' becomes leader by using the next term.
@@ -39,3 +44,7 @@ invariant [unique_leader] forall X,Y. (leader(X) & leader(Y) & ~(X=Y)) -> ~(curr
 
 # Strengthening assertion to make the invariant inductive.
 #invariant [a1] forall X. leader(X) -> lt(currentTerm(X), nextTerm)
+
+
+# interpret server -> bv[2]
+# interpret term -> {0..3}
