@@ -136,7 +136,7 @@ action commitEntry(i:server, q:quorum) = {
 
 export becomeLeader
 export clientRequest
-export getEntries
+# export getEntries
 export commitEntry
 
 #
