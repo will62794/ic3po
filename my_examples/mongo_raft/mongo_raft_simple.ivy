@@ -39,9 +39,9 @@ axiom X:index = indzero | indlt(indzero, X)
 function indlte(A:index,B:index):bool
 definition indlte(A,B) = indlt(A,B) | (A = B)
 
-relation succ(X:index,Y:index)
-definition succ(x:index,y:index) = (~indlte(y,x) & forall Z:index. ~indlte(Z,x) -> indlte(y,Z))
-axiom ~succ(indzero, X:index)
+# relation succ(X:index,Y:index)
+# definition succ(x:index,y:index) = (~indlte(y,x) & forall Z:index. ~indlte(Z,x) -> indlte(y,Z))
+# axiom ~succ(indzero, X:index)
 
 #
 # State variables.
@@ -107,8 +107,8 @@ action becomeLeader(i:server, q:quorum, newterm:term) = {
 # Leader 'i' writes down a new entry.
 action clientRequest(i:server, nextInd:index) = {
     require leader(i);
-    require succ(loglen(i), nextInd);
-    # require indlt(loglen(i),nextInd); 
+    # require succ(loglen(i), nextInd);
+    require indlt(loglen(i),nextInd); 
     log(i, nextInd) := currentTerm(i);
     loglen(i) := nextInd;
 }
