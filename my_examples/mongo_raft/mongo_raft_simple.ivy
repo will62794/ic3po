@@ -94,8 +94,11 @@ action becomeLeader(i:server, q:quorum, newterm:term) = {
     require forall X. member(X,q) -> lt(currentTerm(X), newterm);
     
     # Log check (TODO)
-    require forall X. member(X,q) -> ( (loglen(X) = indzero) | ( (log(i, loglen(i)) = log(X, loglen(X)) ) & indlt(loglen(i), loglen(X))) | lt(log(i, loglen(i)),log(X, loglen(X))) );
+    #require forall X. member(X,q) -> ( (loglen(X) = indzero) | ( (log(i, loglen(i)) = log(X, loglen(X)) ) & indlt(loglen(i), loglen(X))) | lt(log(i, loglen(i)),log(X, loglen(X))) );
     
+    # Something a bit weaker.
+    require forall X. member(X,q) -> (loglen(X) = indzero);
+
     # Try something even stronger for debugging.
     #require forall X. (loglen(X) = indzero);
 
