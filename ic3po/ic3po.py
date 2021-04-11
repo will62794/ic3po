@@ -1473,6 +1473,7 @@ class PDR(object):
         while True:
             push_time()
             cube = self.get_bad_state(nexbad)
+            # print("### CUBE", cube)
             if cube is not None:
                 self.update_time_stat("time-cti-bad-sat", pop_time())
                 # Blocking phase of a bad state
@@ -2242,7 +2243,11 @@ class PDR(object):
         result = self.solve_formula(solver, formula, quiet)
         if result:
             model = self.last_solver.get_model()
-#             model.print_model()
+            print("#"*20 + "MODEL PRINT: " + "#"*20)
+            # model.print_model()
+            # for k in model:
+            #     print("modelK", k, model[k[0]])
+            print("#"*20 + "END PRINT MODEL:" + "#"*20)
             sorts = dict()
             isorts = dict()
             if len(self.system._sort2fin) != len(self.system._sorts):
@@ -2382,6 +2387,18 @@ class PDR(object):
                 print("(action info)")
                 inputConditions = []
                 actionIdx = -1
+
+                # for idx, f in enumerate(self.system.curr._vars):
+                #     print("VAR", idx, f)
+                #     print(type(f))
+                #     print(f.get_type())
+                    # print(model.get_value(f))
+                    # pretty_print_str(f)
+                    # print(type(f))
+                    # try:
+                        # print(model.get_value(f))
+                    # except:
+                        # pass
                 for idx, f in enumerate(self.system.curr._actions):
                     en = f[2]
                     enValue = self.get_state_value(en, model)
@@ -2389,15 +2406,18 @@ class PDR(object):
                         actionIdx = idx
                         actionName = f[1]
                         print("\taction: %s" % actionName)
-    #                     print("\ten: " + str(en) + " with value " + str(enValue))
+                        print("\ten: " + str(en) + " with value " + str(enValue))
                         
                         print("\tinputs:")
                         if actionName in self.system.syntax.action2inputs:
                             actionInputs = self.system.syntax.action2inputs[actionName]
+                            print("actionName", actionName)
                             for inp in actionInputs:
+                                # print("input type:", type(inp))
                                 inpValueEnum = self.get_state_value(inp, model)
                                 if self.allow_inputs_in_cube:
                                     conditions.append(EqualsOrIff(inp, inpValueEnum))
+                                # print("ivarmap:",ivarMap)
                                 inpValue = inpValueEnum.simple_substitute(ivarMap)
                                 print("\t\t" + pretty_print_str(inp) + " -> " + pretty_print_str(inpValue))
                                 if inpValue.is_enum_constant() and str(inpValue.constant_type()).startswith("epoch"):
@@ -2411,6 +2431,61 @@ class PDR(object):
 #                         self.print_global_enum()
                         conditions = self.filter_state(conditions)
                         break
+
+                #
+                # PRINT STATE VALUE.
+                #
+                print("<"*15, "STATE VALUE", ">"*15)
+                for idx, f in enumerate(self.system.curr._vars):
+                    if ("leader" in str(f) or "currentTerm" in str(f) or "committed" in str(f) or "log" in str(f)):
+                        if "__" in str(f):
+                            # Ignore next state variable copies?
+                            continue
+                        pass
+                    else:
+                        continue
+                    print("* VAR", pretty_print_str(f)) #, idx)
+                    # print(type(f))
+                    s_type = f.symbol_type()
+                    # print("symbol type:", s_type, "| ", s_type.is_function_type())
+                    if s_type.is_function_type():
+                        i_values = sorts[s_type.param_types[0]]
+                        print("\ti_values:", i_values)
+                        for i in i_values:
+                            if (len(s_type.param_types) == 1):
+                                args = [i]
+                                # print("args:",args)
+
+                                fn = Function(f, args)
+                                value = self.get_state_value(fn, model)
+
+                                # print("rawval:", value)
+                                ret = self.get_relation_value(f, args, model)
+                                rval = model.get_value(ret)
+                                # print("RET:",ret)
+                                print("\tRVAL:",pretty_print_str(f)+"("+pretty_print_str(i)+") =",pretty_print_str(value))
+                            elif (len(s_type.param_types) == 2):
+                                j_values = sorts[s_type.param_types[1]]
+                                print("\tj_values:", j_values)
+                                for j in j_values:
+                                    args = [i, j]
+                                    # print("args:",args)
+
+                                    fn = Function(f, args)
+                                    value = self.get_state_value(fn, model)
+
+                                    ret = self.get_relation_value(f, args, model)
+                                    # print(ret)
+                                    rval = model.get_value(ret)
+                                    print("\tRVAL:",pretty_print_str(f),"("+pretty_print_str(i)+","+pretty_print_str(j)+") =",pretty_print_str(value))
+
+
+                    # try:
+                    #     v = self.get_state_value(f, model)
+                    #     print(v)
+                    # except:
+                    #     pass
+                print("-"*15, "END STATE VALUE", "-"*15)
 
             if self.random > 3:
                 random.shuffle(conditions)
