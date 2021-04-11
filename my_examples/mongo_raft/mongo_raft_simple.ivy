@@ -39,6 +39,10 @@ axiom X:index = indzero | indlt(indzero, X)
 function indlte(A:index,B:index):bool
 definition indlte(A,B) = indlt(A,B) | (A = B)
 
+relation succ(X:index,Y:index)
+definition succ(x:index,y:index) = (~indlte(y,x) & forall Z:index. ~indlte(Z,x) -> indlte(y,Z))
+axiom ~succ(indzero, X:index)
+
 #
 # State variables.
 #
@@ -73,8 +77,6 @@ after init {
     committed(I,T) := false;
 }
 
-# Term of the latest log entry in the log of 'i'.
-# definition lastTerm(x) = log(x, loglen(x))
 
 # Does node 'x' have a newer or equal log than node 'y'
 # definition logGTE(x,y) = (loglen(Y) = 0) | (lastTerm(y) = lastTerm(x) & indlt(loglen(y), loglen(x))) | lt(lastTerm(y),lastTerm(x))
@@ -92,10 +94,10 @@ action becomeLeader(i:server, q:quorum, newterm:term) = {
     require forall X. member(X,q) -> lt(currentTerm(X), newterm);
     
     # Log check (TODO)
-    #require forall X. member(X,q) -> (loglen(X) = indzero) | ((log(i, loglen(i)) = log(X, loglen(X))) & indlt(loglen(i), loglen(X))) | lt(log(i, loglen(i)),log(X, loglen(X)));
+    require forall X. member(X,q) -> ( (loglen(X) = indzero) | ( (log(i, loglen(i)) = log(X, loglen(X)) ) & indlt(loglen(i), loglen(X))) | lt(log(i, loglen(i)),log(X, loglen(X))) );
     
     # Try something even stronger for debugging.
-    require forall X. (loglen(X) = indzero);
+    #require forall X. (loglen(X) = indzero);
 
     # Update term and state of servers. /
     currentTerm(J) := newterm if member(J,q) else currentTerm(J);
@@ -105,7 +107,8 @@ action becomeLeader(i:server, q:quorum, newterm:term) = {
 # Leader 'i' writes down a new entry.
 action clientRequest(i:server, nextInd:index) = {
     require leader(i);
-    require indlt(loglen(i),nextInd); 
+    require succ(loglen(i), nextInd);
+    # require indlt(loglen(i),nextInd); 
     log(i, nextInd) := currentTerm(i);
     loglen(i) := nextInd;
 }
@@ -175,7 +178,7 @@ invariant [leader_completeness] (committed(I,T) & leader(X) & lt(T, currentTerm(
 # invariant [ic3po_global1]	(forall Q0 . (exists S0 . (forall S1, T0, T1 . ((((S1 = S0) | (currentTerm(S0) = T0)) & (currentTerm(S1) = T1)) -> ((T0 = T1) | lt(T1, T0) | member(S1, Q0))))))
 
 
-#interpret server -> {0..1}
-#interpret term -> bv[1]
-#interpret quorum -> {0..3}
-#interpret index -> bv[1]
+# interpret server -> {0..1}
+# interpret term -> {0..2}
+# interpret quorum -> {0..3}
+# interpret index -> {0..2}
