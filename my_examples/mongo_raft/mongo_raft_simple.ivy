@@ -94,10 +94,10 @@ action becomeLeader(i:server, q:quorum, newterm:term) = {
     require forall X. member(X,q) -> lt(currentTerm(X), newterm);
     
     # Log check (TODO)
-    #require forall X. member(X,q) -> ( (loglen(X) = indzero) | ( (log(i, loglen(i)) = log(X, loglen(X)) ) & indlt(loglen(i), loglen(X))) | lt(log(i, loglen(i)),log(X, loglen(X))) );
-    
+    require forall X. member(X,q) -> ( (loglen(X) = indzero) | ( (log(i, loglen(i)) = log(X, loglen(X)) ) & indlt(loglen(i), loglen(X))) | lt(log(X, loglen(X)),log(i, loglen(i))) );
+
     # Something a bit weaker.
-    require forall X. member(X,q) -> (loglen(X) = indzero);
+    # require forall X. member(X,q) -> (loglen(X) = indzero);
 
     # Try something even stronger for debugging.
     #require forall X. (loglen(X) = indzero);
@@ -160,9 +160,12 @@ export commitEntry
 
 # When a leader gets elected, it must have all entries committed in previous terms.
 invariant [leader_completeness] (committed(I,T) & leader(X) & lt(T, currentTerm(X))) -> log(X,I) = T
+# invariant [l1] committed(I,T) -> ~(I = indzero)
+# invariant [l2] committed(I,T) -> exists X. log(X,I)=T
+
 
 # At most one unique log entry can be committed at a particular log index.
-# invariant [sm_safety] (committed(I,T0) & committed(J,T1) & (I=J)) -> (T0 = T1)
+#invariant [sm_safety] (committed(I,T0) & committed(J,T1) & (I=J)) -> (T0 = T1)
 
 
 #
@@ -182,6 +185,6 @@ invariant [leader_completeness] (committed(I,T) & leader(X) & lt(T, currentTerm(
 
 
 # interpret server -> {0..1}
-# interpret term -> {0..2}
+# interpret term -> {0..1}
 # interpret quorum -> {0..3}
-# interpret index -> {0..2}
+# interpret index -> {0..1}
