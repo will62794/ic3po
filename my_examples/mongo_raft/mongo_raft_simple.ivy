@@ -25,8 +25,11 @@ axiom ~lt(X:term,X)
 axiom lt(X:term,Y) | (X = Y) | lt(Y,X)
 axiom X:term = termzero | lt(termzero, X)
 
-function lte(A:term,B:term):bool
-definition lte(A,B) = lt(A,B) | (A = B)
+# function lte(A:term,B:term):bool
+# definition lte(A,B) = lt(A,B) | (A = B)
+
+relation lte(A:term,B:term)
+axiom lte(A:term,B:term) = lt(A,B) | (A = B)
 
 # Less than relation on log indices to provide total order.
 individual indzero:index
@@ -36,8 +39,15 @@ axiom ~indlt(X:index,X)
 axiom indlt(X:index,Y) | (X = Y) | indlt(Y,X)
 axiom X:index = indzero | indlt(indzero, X)
 
-function indlte(A:index,B:index):bool
-definition indlte(A,B) = indlt(A,B) | (A = B)
+# function indlte(A:index,B:index):bool
+# definition indlte(A,B) = indlt(A,B) | (A = B)
+
+relation indlte(A:index,B:index)
+axiom indlte(A:index,B:index) = indlt(A,B) | (A = B)
+
+# Define successor relation for indices.
+relation succ(X:index,Z:index)
+axiom succ(X,Z) -> (indlt(X,Z) & ~(indlt(X,Y) & indlt(Y,Z)))
 
 # relation succ(X:index,Y:index)
 # definition succ(x:index,y:index) = (~indlte(y,x) & forall Z:index. ~indlte(Z,x) -> indlte(y,Z))
@@ -111,7 +121,8 @@ action becomeLeader(i:server, q:quorum, newterm:term) = {
 action clientRequest(i:server, nextInd:index) = {
     require leader(i);
     # require succ(loglen(i), nextInd);
-    require indlt(loglen(i),nextInd); 
+    # require indlt(loglen(i),nextInd); 
+    require succ(loglen(i), nextInd);
     log(i, nextInd) := currentTerm(i);
     loglen(i) := nextInd;
 }
@@ -121,7 +132,8 @@ action getEntries(i:server, j:server, nextInd:index) = {
     require ~(indzero = loglen(i));
     require indlt(indzero, loglen(i));
     require indlt(loglen(j), loglen(i));
-    require indlt(loglen(j), nextInd);
+    require succ(loglen(i), nextInd);
+    # require indlt(loglen(j), nextInd);
     # Log consistency check. An empty log can always receive log entries.
     require true if (loglen(j)=indzero) else (log(j,loglen(j)) = log(i, loglen(i)));
     log(j, nextInd) := log(i, nextInd);
@@ -153,7 +165,14 @@ export commitEntry
 # invariant [election_safety_a1] (leader(X) & currentTerm(X)=T) -> exists Q:quorum. member(Y,Q) -> lte(currentTerm(X), currentTerm(Y))
 
 
-# invariant [monotonic_log_terms] (indlt(I,J) & ~(J=indzero) & indlt(J,loglen(X)) & ~(log(X,J)=termzero)) -> lte(log(X,I),log(X,J))
+# invariant [monotonic_log_terms] (succ(I,J) & indlte(J, loglen(X))) -> lte(log(X,I),log(X,J))
+
+# invariant [monotonic_log_terms] (succ(I,J) & ~(I=indzero) & J < loglen()
+
+# indlt(J,loglen(X)) & ~(log(X,J)=termzero)) -> lte(log(X,I),log(X,J))
+
+
+# invariant [monotonic_log_terms] (succ(I,J) & ~(I=indzero) & indlt(J,loglen(X)) & ~(log(X,J)=termzero)) -> lte(log(X,I),log(X,J))
 
 # An (index, term) pair uniquely identifies log prefix.
 # invariant [log_matching] (log(X,I) = log(Y,I) & indlt(J,I)) -> (log(X,J) = log(X,J))
