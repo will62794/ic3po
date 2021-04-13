@@ -1,0 +1,68 @@
+#lang ivy1.7
+
+#
+# Testing simple ordered log (sequence) types in Ivy.
+#
+
+type term
+type index
+
+#
+# Axioms on the sorts used in the protocol.
+#
+
+# Less than relation on terms to provide total order.
+individual termzero:term
+relation lt(X:term, Y:term)
+axiom lt(X:term,Y) & lt(Y,Z) -> lt(X,Z)
+axiom ~lt(X:term,X)
+axiom lt(X:term,Y) | (X = Y) | lt(Y,X)
+axiom X:term = termzero | lt(termzero, X)
+
+function lte(A:term,B:term):bool
+definition lte(A,B) = lt(A,B) | (A = B)
+
+# Less than relation on log indices to provide total order.
+individual indzero:index
+relation indlt(X:index, Y:index)
+axiom indlt(X:index,Y) & indlt(Y,Z) -> indlt(X,Z)
+axiom ~indlt(X:index,X)
+axiom indlt(X:index,Y) | (X = Y) | indlt(Y,X)
+axiom X:index = indzero | indlt(indzero, X)
+
+function indlte(A:index,B:index):bool
+definition indlte(A,B) = indlt(A,B) | (A = B)
+
+# Define successor relation for indices.
+relation succ(X:index,Z:index)
+axiom succ(X,Z) -> (indlt(X,Z) & ~(indlt(X,Y) & indlt(Y,Z)))
+
+# The log;
+function log(I:index):term
+
+# The current log length.
+individual loglen : index
+
+individual currentTerm : term
+
+after init {
+    loglen := indzero;
+    log(I) := termzero;
+}
+
+action incTerm(nextTerm: term) = {
+    require lt(currentTerm, nextTerm);
+    currentTerm := nextTerm
+}
+
+# Write down a new log entry.
+action clientRequest(nextInd:index) = {
+    require succ(loglen, nextInd);
+    log(nextInd) := currentTerm;
+    loglen := nextInd;
+}
+
+export incTerm
+export clientRequest
+
+invariant [monotonic_terms] (succ(I,J) & indlte(J, loglen)) -> lte(log(I),log(J))
