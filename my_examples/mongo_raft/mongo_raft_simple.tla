@@ -127,5 +127,6 @@ IInv ==
     \* /\ A1
     /\ A1_IC3PO
 
+Symmetry == Permutations(Server)
 
 ====
