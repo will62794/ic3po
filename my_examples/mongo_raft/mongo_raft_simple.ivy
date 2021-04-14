@@ -19,17 +19,13 @@ axiom forall Q1:quorum, Q2:quorum. exists N:server. member(N, Q1) & member(N, Q2
 
 # Less than relation on terms to provide total order.
 individual termzero:term
-relation lt(X:term, Y:term)
-axiom lt(X:term,Y) & lt(Y,Z) -> lt(X,Z)
-axiom ~lt(X:term,X)
-axiom lt(X:term,Y) | (X = Y) | lt(Y,X)
-axiom X:term = termzero | lt(termzero, X)
+relation lte(X:term,Y:term)
+axiom lte(termzero, X:term)
+axiom lte(X:term, X) # Reflexivity
+axiom ~lte(X:term, Y) | ~lte(Y, Z) | lte(X, Z) # transitivity
+axiom ~lte(X:term, Y) | ~lte(Y, X) | X = Y # anti-symmetric
+axiom lte(X:term, Y) | lte(Y, X) # totality
 
-# function lte(A:term,B:term):bool
-# definition lte(A,B) = lt(A,B) | (A = B)
-
-relation lte(A:term,B:term)
-axiom lte(A:term,B:term) = lt(A,B) | (A = B)
 
 # Less than relation on log indices to provide total order.
 individual indzero:index
@@ -99,12 +95,13 @@ action becomeLeader(i:server, q:quorum, newterm:term) = {
     # Must garner a quorum of voters that haven't voted in this term,
     # and primary votes for itself.
     require ~(newterm = termzero);
-    require lt(currentTerm(i), newterm);
+    require lte(currentTerm(i), newterm) & ~(newterm = currentTerm(i));
     require member(i,q);
-    require forall X. member(X,q) -> lt(currentTerm(X), newterm);
+    require forall X. member(X,q) -> (lte(currentTerm(X), newterm) & ~(currentTerm(X) = newterm));
     
     # Log check (TODO)
-    require forall X. member(X,q) -> ( (loglen(X) = indzero) | ( (log(i, loglen(i)) = log(X, loglen(X)) ) & indlt(loglen(i), loglen(X))) | lt(log(X, loglen(X)),log(i, loglen(i))) );
+    require forall X. member(X,q) -> ( (loglen(X) = indzero) | ( (log(i, loglen(i)) = log(X, loglen(X)) ) & indlt(loglen(i), loglen(X))) | ( lte(log(X, loglen(X)), log(i, loglen(i))) & ~(log(X, loglen(X)) = log(i, loglen(i))) ) );
+
 
     # Something a bit weaker.
     # require forall X. member(X,q) -> (loglen(X) = indzero);
@@ -164,21 +161,14 @@ export commitEntry
 # invariant [election_safety] (leader(X) & leader(Y) & ~(X=Y)) -> ~(currentTerm(X)=currentTerm(Y))
 # invariant [election_safety_a1] (leader(X) & currentTerm(X)=T) -> exists Q:quorum. member(Y,Q) -> lte(currentTerm(X), currentTerm(Y))
 
-
+# Terms increase monotonically in a server's log.
 # invariant [monotonic_log_terms] (succ(I,J) & indlte(J, loglen(X))) -> lte(log(X,I),log(X,J))
-
-# invariant [monotonic_log_terms] (succ(I,J) & ~(I=indzero) & J < loglen()
-
-# indlt(J,loglen(X)) & ~(log(X,J)=termzero)) -> lte(log(X,I),log(X,J))
-
-
-# invariant [monotonic_log_terms] (succ(I,J) & ~(I=indzero) & indlt(J,loglen(X)) & ~(log(X,J)=termzero)) -> lte(log(X,I),log(X,J))
 
 # An (index, term) pair uniquely identifies log prefix.
 # invariant [log_matching] (log(X,I) = log(Y,I) & indlt(J,I)) -> (log(X,J) = log(X,J))
 
 # When a leader gets elected, it must have all entries committed in previous terms.
-invariant [leader_completeness] (committed(I,T) & leader(X) & lt(T, currentTerm(X))) -> log(X,I) = T
+invariant [leader_completeness] (committed(I,T) & leader(X) & (lte(T, currentTerm(X)) &  ~(T=currentTerm(X)))) -> log(X,I) = T
 # invariant [l1] committed(I,T) -> ~(I = indzero)
 # invariant [l2] committed(I,T) -> exists X. log(X,I)=T
 
