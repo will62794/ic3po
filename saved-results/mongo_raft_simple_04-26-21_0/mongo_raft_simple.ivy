@@ -1,0 +1,199 @@
+#lang ivy1.7
+
+#
+# Simplified version of MongoDB Raft protocol in Ivy
+#
+
+type server
+type term
+type quorum
+type index
+
+#
+# Axioms on the sorts used in the protocol.
+#
+
+# Any two quorums must overlap.
+relation member(N:server, Q:quorum)
+axiom forall Q1:quorum, Q2:quorum. exists N:server. member(N, Q1) & member(N, Q2)
+
+# Less than relation on terms to provide total order.
+individual termzero:term
+relation lte(X:term,Y:term)
+axiom lte(termzero, X:term)
+axiom lte(X:term, X) # Reflexivity
+axiom ~lte(X:term, Y) | ~lte(Y, Z) | lte(X, Z) # transitivity
+axiom ~lte(X:term, Y) | ~lte(Y, X) | X = Y # anti-symmetric
+axiom lte(X:term, Y) | lte(Y, X) # totality
+
+
+# Less than relation on log indices to provide total order.
+individual indzero:index
+relation indlt(X:index, Y:index)
+axiom indlt(X:index,Y) & indlt(Y,Z) -> indlt(X,Z)
+axiom ~indlt(X:index,X)
+axiom indlt(X:index,Y) | (X = Y) | indlt(Y,X)
+axiom X:index = indzero | indlt(indzero, X)
+
+# function indlte(A:index,B:index):bool
+# definition indlte(A,B) = indlt(A,B) | (A = B)
+
+relation indlte(A:index,B:index)
+axiom indlte(A:index,B:index) = indlt(A,B) | (A = B)
+
+# Define successor relation for indices.
+relation succ(X:index,Z:index)
+axiom succ(X,Z) -> (indlt(X,Z) & ~(indlt(X,Y) & indlt(Y,Z)))
+
+# relation succ(X:index,Y:index)
+# definition succ(x:index,y:index) = (~indlte(y,x) & forall Z:index. ~indlte(Z,x) -> indlte(y,Z))
+# axiom ~succ(indzero, X:index)
+
+#
+# State variables.
+#
+
+# VARIABLE currentTerm
+# VARIABLE state
+# VARIABLE log
+# VARIABLE config
+# VARIABLE committed
+
+# A server's current term.
+function currentTerm(X:server) : term
+
+# Whether a server is currently acting as a leader.
+#function state(X:server) : state_t
+relation leader(X:server)
+
+# The logs of each server.
+function log(X:server, I:index):term
+
+# The current length of the log on server X.
+function loglen(X:server) : index
+
+# The set of committed log entries.
+relation committed(I:index, T:term)
+
+after init {
+    leader(X) := false;
+    currentTerm(X) := termzero;
+    loglen(X) := indzero;
+    log(X,I) := termzero;
+    committed(I,T) := false;
+}
+
+
+# Does node 'x' have a newer or equal log than node 'y'
+# definition logGTE(x,y) = (loglen(Y) = 0) | (lastTerm(y) = lastTerm(x) & indlt(loglen(y), loglen(x))) | lt(lastTerm(y),lastTerm(x))
+
+# Can server 'i' vote for server 'j' in term 't'.
+#definition canVoteFor(I,J) = true #lt(currentTerm(j), t) #& logGTE(j,i)
+
+# Server 'i' becomes leader by using the next term.
+action becomeLeader(i:server, q:quorum, newterm:term) = {
+    # Must garner a quorum of voters that haven't voted in this term,
+    # and primary votes for itself.
+    require ~(newterm = termzero);
+    require lte(currentTerm(i), newterm) & ~(newterm = currentTerm(i));
+    require member(i,q);
+    require forall X. member(X,q) -> (lte(currentTerm(X), newterm) & ~(currentTerm(X) = newterm));
+    
+    # Log check (TODO)
+    require forall X. member(X,q) -> ( (loglen(X) = indzero) | ( (log(i, loglen(i)) = log(X, loglen(X)) ) & indlt(loglen(i), loglen(X))) | ( lte(log(X, loglen(X)), log(i, loglen(i))) & ~(log(X, loglen(X)) = log(i, loglen(i))) ) );
+
+
+    # Something a bit weaker.
+    # require forall X. member(X,q) -> (loglen(X) = indzero);
+
+    # Try something even stronger for debugging.
+    #require forall X. (loglen(X) = indzero);
+
+    # Update term and state of servers. /
+    currentTerm(J) := newterm if member(J,q) else currentTerm(J);
+    leader(J) := true if J=i else (false if member(J,q) else leader(J));
+}
+
+# Leader 'i' writes down a new entry.
+action clientRequest(i:server, nextInd:index) = {
+    require leader(i);
+    # require succ(loglen(i), nextInd);
+    # require indlt(loglen(i),nextInd); 
+    require succ(loglen(i), nextInd);
+    log(i, nextInd) := currentTerm(i);
+    loglen(i) := nextInd;
+}
+
+# Server 'i' sends a log entry to server 'j'.
+action getEntries(i:server, j:server, nextInd:index) = {
+    require ~(indzero = loglen(i));
+    require indlt(indzero, loglen(i));
+    require indlt(loglen(j), loglen(i));
+    require succ(loglen(i), nextInd);
+    # require indlt(loglen(j), nextInd);
+    # Log consistency check. An empty log can always receive log entries.
+    require true if (loglen(j)=indzero) else (log(j,loglen(j)) = log(i, loglen(i)));
+    log(j, nextInd) := log(i, nextInd);
+    loglen(j) := nextInd;
+}
+
+# Leader i commits its latest entry.
+action commitEntry(i:server, q:quorum) = {
+    require leader(i);
+    require ~(loglen(i) = indzero);
+    require member(i,q);
+    # require indlt(indzero, loglen(i));
+    # All members in quorum have the entry and are in term of the primary.
+    require forall X. member(X,q) -> currentTerm(X) = currentTerm(i);
+    require forall X. member(X,q) -> (indlte(loglen(X), loglen(i))) & (log(X, loglen(i)) = log(i, loglen(i)));
+    committed(loglen(i), log(i, loglen(i))) := true;
+}
+
+export becomeLeader
+export clientRequest
+# export getEntries
+export commitEntry
+
+#
+# Some basic lemma invariants of Raft.
+#
+
+# invariant [election_safety] (leader(X) & leader(Y) & ~(X=Y)) -> ~(currentTerm(X)=currentTerm(Y))
+# invariant [election_safety_a1] (leader(X) & currentTerm(X)=T) -> exists Q:quorum. member(Y,Q) -> lte(currentTerm(X), currentTerm(Y))
+
+# Terms increase monotonically in a server's log.
+# invariant [monotonic_log_terms] (succ(I,J) & indlte(J, loglen(X))) -> lte(log(X,I),log(X,J))
+
+# An (index, term) pair uniquely identifies log prefix.
+# invariant [log_matching] (log(X,I) = log(Y,I) & indlt(J,I)) -> (log(X,J) = log(X,J))
+
+# When a leader gets elected, it must have all entries committed in previous terms.
+invariant [leader_completeness] (committed(I,T) & leader(X) & (lte(T, currentTerm(X)) &  ~(T=currentTerm(X)))) -> log(X,I) = T
+# invariant [l1] committed(I,T) -> ~(I = indzero)
+# invariant [l2] committed(I,T) -> exists X. log(X,I)=T
+
+
+# At most one unique log entry can be committed at a particular log index.
+#invariant [sm_safety] (committed(I,T0) & committed(J,T1) & (I=J)) -> (T0 = T1)
+
+
+#
+# Manually generated inductive invariant 
+#
+
+# invariant [leader_implies_quorum_at_term] leader(X) -> (exists Y:quorum. (member(Z,Y) -> lte(currentTerm(Z), currentTerm(X))))
+# invariant [leader_implies_quorum_at_term] (state(X) = primary) -> (exists Y:quorum. member(Z,Y) -> (currentTerm(Z) = currentTerm(X)) | lt(currentTerm(X), currentTerm(Z)))
+
+ 
+#
+# IC3PO generated inductive invariants.
+#
+
+# invariant [ic3po_prop1]	(forall Y, X . ((leader(X) & leader(Y) & ~(X = Y)) -> ~(currentTerm(X) = currentTerm(Y))))
+# invariant [ic3po_global1]	(forall Q0 . (exists S0 . (forall S1, T0, T1 . ((((S1 = S0) | (currentTerm(S0) = T0)) & (currentTerm(S1) = T1)) -> ((T0 = T1) | lt(T1, T0) | member(S1, Q0))))))
+
+
+# interpret server -> {0..1}
+# interpret term -> {0..1}
+# interpret quorum -> {0..3}
+# interpret index -> {0..1}

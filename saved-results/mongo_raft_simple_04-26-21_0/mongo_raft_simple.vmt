@@ -1,0 +1,80 @@
+(declare-sort server 0)
+(declare-sort term 0)
+(declare-sort quorum 0)
+(declare-sort index 0)
+
+(define-fun .server ((S server)) server (! S :sort 0))
+(define-fun .term ((S term)) term (! S :sort 0))
+(define-fun .quorum ((S quorum)) quorum (! S :sort 0))
+(define-fun .index ((S index)) index (! S :sort 0))
+
+(declare-fun __currentTerm (server) term)
+(declare-fun __loglen (server) index)
+(declare-fun __committed (index term) Bool)
+(declare-fun __leader (server) Bool)
+(declare-fun __log (server index) term)
+
+(declare-fun currentTerm (server) term)
+(declare-fun loglen (server) index)
+(declare-fun committed (index term) Bool)
+(declare-fun leader (server) Bool)
+(declare-fun log (server index) term)
+
+(define-fun .currentTerm ((V0 server)) term (! (__currentTerm V0) :next currentTerm))
+(define-fun .loglen ((V0 server)) index (! (__loglen V0) :next loglen))
+(define-fun .committed ((V0 index) (V1 term)) Bool (! (__committed V0 V1) :next committed))
+(define-fun .leader ((V0 server)) Bool (! (__leader V0) :next leader))
+(define-fun .log ((V0 server) (V1 index)) term (! (__log V0 V1) :next log))
+
+(declare-fun member (server quorum) Bool)
+(declare-fun succ (index index) Bool)
+(declare-fun termzero () term)
+(declare-fun indzero () index)
+(declare-fun lte (term term) Bool)
+(declare-fun indlte (index index) Bool)
+(declare-fun indlt (index index) Bool)
+
+(define-fun .member ((V0 server) (V1 quorum)) Bool (! (member V0 V1) :global true))
+(define-fun .succ ((V0 index) (V1 index)) Bool (! (succ V0 V1) :global true))
+(define-fun .termzero () term (! termzero :global true))
+(define-fun .indzero () index (! indzero :global true))
+(define-fun .lte ((V0 term) (V1 term)) Bool (! (lte V0 V1) :global true))
+(define-fun .indlte ((V0 index) (V1 index)) Bool (! (indlte V0 V1) :global true))
+(define-fun .indlt ((V0 index) (V1 index)) Bool (! (indlt V0 V1) :global true))
+
+(define-fun .prop () Bool (! 
+ (let (($v (forall ((I index) (T term) (X server)) (=> (and (__committed I T) (__leader X) (and (lte T (__currentTerm X)) (not (= T (__currentTerm X))))) (= (__log X I) T)))
+ ))
+ (and $v))
+ :invar-property 0))
+
+(define-fun .axiom () Bool (! 
+ (let (($v (and (forall ((Q1 quorum) (Q2 quorum)) (exists ((N server)) (and (member N Q1) (member N Q2)))) (forall ((X term)) (lte termzero X)) (forall ((X term)) (lte X X)) (forall ((X term) (Y term) (Z term)) (or (not (lte X Y)) (not (lte Y Z)) (lte X Z))) (forall ((X term) (Y term)) (or (not (lte X Y)) (not (lte Y X)) (= X Y))) (forall ((X term) (Y term)) (or (lte X Y) (lte Y X))) (forall ((X index) (Y index) (Z index)) (=> (and (indlt X Y) (indlt Y Z)) (indlt X Z))) (forall ((X index)) (not (indlt X X))) (forall ((X index) (Y index)) (or (indlt X Y) (= X Y) (indlt Y X))) (forall ((X index)) (or (= X indzero) (indlt indzero X))) (forall ((A index) (B index)) (or (= (indlte A B) (indlt A B)) (= A B))) (forall ((X index) (Y index) (Z index)) (=> (succ X Z) (and (indlt X Z) (not (and (indlt X Y) (indlt Y Z)))))))
+ ))
+ (and $v))
+ :axiom true))
+
+(define-fun .init () Bool (! 
+ (let (($v (and (forall ((V0 server)) (= (__leader V0) false)) (forall ((V0 server)) (= (__currentTerm V0) termzero)) (forall ((V0 server)) (= (__loglen V0) indzero)) (forall ((V0 server) (V1 index)) (= (__log V0 V1) termzero)) (forall ((V0 index) (V1 term)) (= (__committed V0 V1) false)))
+ ))
+ (and $v))
+ :init true))
+
+(define-fun .action_ext:clientRequest () Bool (! 
+ (let (($v (exists ((V__fml:i server) (V__fml:nextInd index)) (and (forall ((V0 server) (V1 index)) (= (log V0 V1) (ite (and (= V0 V__fml:i) (= V1 V__fml:nextInd)) (__currentTerm V__fml:i) (__log V0 V1)))) (forall ((V0 server)) (= (loglen V0) (ite (= V0 V__fml:i) V__fml:nextInd (__loglen V0)))) (__leader V__fml:i) (succ (__loglen V__fml:i) V__fml:nextInd)))
+ ))
+ (and $v))
+ :action ext:clientRequest))
+
+(define-fun .action_ext:becomeLeader () Bool (! 
+ (let (($v (exists ((V__fml:i server) (V__fml:newterm term) (V__fml:q quorum)) (and (forall ((V0 server)) (= (currentTerm V0) (ite (member V0 V__fml:q) V__fml:newterm (__currentTerm V0)))) (forall ((V0 server)) (= (leader V0) (ite (= V0 V__fml:i) true (ite (member V0 V__fml:q) false (__leader V0))))) (not (= V__fml:newterm termzero)) (lte (__currentTerm V__fml:i) V__fml:newterm) (not (= V__fml:newterm (__currentTerm V__fml:i))) (member V__fml:i V__fml:q) (forall ((X server)) (=> (member X V__fml:q) (and (lte (__currentTerm X) V__fml:newterm) (not (= (__currentTerm X) V__fml:newterm))))) (forall ((X server)) (=> (member X V__fml:q) (or (= (__loglen X) indzero) (and (= (__log V__fml:i (__loglen V__fml:i)) (__log X (__loglen X))) (indlt (__loglen V__fml:i) (__loglen X))) (and (lte (__log X (__loglen X)) (__log V__fml:i (__loglen V__fml:i))) (not (= (__log X (__loglen X)) (__log V__fml:i (__loglen V__fml:i))))))))))
+ ))
+ (and $v))
+ :action ext:becomeLeader))
+
+(define-fun .action_ext:commitEntry () Bool (! 
+ (let (($v (exists ((V__fml:i server) (V__fml:q quorum)) (and (forall ((V0 index) (V1 term)) (= (committed V0 V1) (ite (and (= V0 (__loglen V__fml:i)) (= V1 (__log V__fml:i (__loglen V__fml:i)))) true (__committed V0 V1)))) (__leader V__fml:i) (not (= (__loglen V__fml:i) indzero)) (member V__fml:i V__fml:q) (forall ((X server)) (=> (member X V__fml:q) (= (__currentTerm X) (__currentTerm V__fml:i)))) (forall ((X server)) (=> (member X V__fml:q) (and (indlte (__loglen X) (__loglen V__fml:i)) (= (__log X (__loglen V__fml:i)) (__log V__fml:i (__loglen V__fml:i))))))))
+ ))
+ (and $v))
+ :action ext:commitEntry))
+
