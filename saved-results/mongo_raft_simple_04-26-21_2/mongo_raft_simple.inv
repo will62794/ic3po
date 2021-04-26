@@ -1,0 +1,12 @@
+### Proof certificate: #10
+invariant [ic3po_prop1]	(forall I, T, X . ((committed(I, T) & leader(X) & (lte(T, currentTerm(X)) & ~(T = currentTerm(X)))) -> (log(X, I) = T)))
+invariant [ic3po_global11]	(forall S0 . (log(S0, indzero) = termzero))
+invariant [ic3po_other6]	(forall I0, S0 . ((termzero = log(S0, I0)) | (currentTerm(S0) = log(S0, I0)) | (termzero = currentTerm(S0))))
+invariant [ic3po_other1]	(forall I0 . ~committed(I0, termzero))
+invariant [ic3po_global5_1]	(forall S0 . (leader(S0) -> ~(currentTerm(S0) = termzero)))
+invariant [ic3po_other9]	(forall I0, S0 . ((termzero = log(S0, I0)) | leader(S0)))
+invariant [ic3po_global5]	(forall S0 . (leader(S0) -> ((log(S0, loglen(S0)) = currentTerm(S0)) | (indzero = loglen(S0)))))
+invariant [ic3po_other4]	(forall I1, S0 . ((log(S0, I1) = currentTerm(S0)) -> (log(S0, loglen(S0)) = currentTerm(S0))))
+invariant [ic3po_global11_2]	(exists Q0 . (forall T0, T1, S1, S0 . (((currentTerm(S0) = T0) & (currentTerm(S1) = T1) & member(S0, Q0)) -> lte(T1, T0))))
+invariant [ic3po_other7]	(exists Q0 . (forall I0, T0, T1, I1, S0 . (((log(S0, I0) = T1) & (loglen(S0) = I0) & committed(I1, T0) & member(S0, Q0)) -> (T0 = T1))))
+###
