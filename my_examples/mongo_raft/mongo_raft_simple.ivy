@@ -126,13 +126,15 @@ action clientRequest(i:server, nextInd:index) = {
 
 # Server 'i' sends a log entry to server 'j'.
 action getEntries(i:server, j:server, nextInd:index) = {
-    require ~(indzero = loglen(i));
-    require indlt(indzero, loglen(i));
-    require indlt(loglen(j), loglen(i));
+    require ~leader(i); # only allow secondaries to replicate entries.
+    require ~(indzero = loglen(i)); # i cannot have an empty log.
+    require indlt(loglen(j), loglen(i)); # i should have a longer log than j.
     require succ(loglen(j), nextInd);
-    # require indlt(loglen(j), nextInd);
+
     # Log consistency check. An empty log can always receive log entries.
     require true if (loglen(j)=indzero) else (log(j,loglen(j)) = log(i, loglen(i)));
+    
+    # Append the new entry to j's log.
     log(j, nextInd) := log(i, nextInd);
     loglen(j) := nextInd;
 }
