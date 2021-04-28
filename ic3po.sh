@@ -5,6 +5,9 @@
 #
 # Usage: ./ic3po.sh <specname> <specfile> [save]
 #
+# After running this script, you can save the results by running 
+# the accompanying script: ic3po_save.sh <specname>
+#
 
 set -e
 
@@ -19,21 +22,7 @@ echo "specname: $specname"
 echo "specfile: $specfile"
 echo "stdoutfile: $stdoutfile"
 
-# Run ic3po at high verbosity and save stdout to a file.
+# Run ic3po at high verbosity and save stdout to a file. We redirect stderr to stdout to allow this.
 cmd="python ic3po.py -v 5 -o $results_dir -n $specname $specfile"
-$cmd 2>&1 >/dev/null | tee $stdoutfile
-
-# Optionally save the results of the run to saved results directory.
-if [[ ! -z "$3" && "$3" == "save" ]]
-    then
-        DATESTR=`date "+%Y-%m-%d_T_%H_%M_%S"`
-        saved_results_dir="saved-results/${specname}_${DATESTR}"
-        echo "saved results to: $saved_results_dir"
-        # mkdir $saved_results_dir
-        cp -r "$results_dir/$specname" $saved_results_dir
-        echo "cmd: $cmd" > $saved_results_dir/stdout.txt
-        cat $results_dir/stdout.txt >> $saved_results_dir/stdout.txt
-    else
-        echo "not saving ic3po result."
-fi
-
+echo "cmd: $cmd" > $stdoutfile
+$cmd 2>&1 >/dev/null | tee -a $stdoutfile

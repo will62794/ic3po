@@ -1,0 +1,8 @@
+### Proof certificate: #6
+invariant [ic3po_prop1]	(forall V1, V2, N1, N2 . ((decided(N1, V1) & decided(N2, V2)) -> (V1 = V2)))
+invariant [ic3po_global4]	(forall N1, N0 . (votes(N0, N1) -> vote_msg(N1, N0)))
+invariant [ic3po_other11]	(forall N1, N2, N0 . ((vote_msg(N2, N0) & vote_msg(N2, N1)) -> (N0 = N1)))
+invariant [ic3po_global5_1]	(forall N1, N0 . (vote_msg(N1, N0) -> voted(N1)))
+invariant [ic3po_global5]	(forall V0, N0 . (decided(N0, V0) -> leader(N0)))
+invariant [ic3po_other1]	(exists Q0 . (forall N1, Q2, N2, N0 . ((((Q2 = Q0) | member(N1, Q0)) & leader(N0) & member(N2, Q2)) -> (votes(N0, N1) | votes(N0, N2)))))
+###
