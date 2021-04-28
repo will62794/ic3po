@@ -1,0 +1,761 @@
+
+Printing isolate this:
+OK
+	(mode: ic3po)
+	(reuse: 1)
+	(opt: 1)
+	(const: 1)
+	(wires: 1)
+	(using z3 4.8.10.0 with seed 0)
+@     0s  Reading from file results/consensus_epr/consensus_epr.vmt
+	(found sort dependency: node -> quorum)
+-----------------------------------------------------------------
+
+Action inputs:
+	ext:recv_vote: set([V__fml:n, V__fml:sender])
+	ext:decide: set([V__fml:v, V__fml:n])
+	ext:send_vote: set([V__fml:dst, V__fml:src])
+	ext:send_request_vote: set([V__fml:dst, V__fml:src])
+	ext:become_leader: set([V__fml:n, V__fml:q])
+
+Action definitions:
+	ext:recv_vote: {}
+	ext:decide: {}
+	ext:send_vote: {}
+	ext:send_request_vote: {}
+	ext:become_leader: {}
+
+Action preconditions:
+
+	ext:recv_vote:
+		__vote_msg(V__fml:sender, V__fml:n)
+
+	ext:decide:
+		(forall V . ~__decided(V__fml:n, V))
+		__leader(V__fml:n)
+
+	ext:send_vote:
+		~__voted(V__fml:src)
+		__vote_request_msg(V__fml:dst, V__fml:src)
+
+	ext:send_request_vote:
+
+	ext:become_leader:
+		(forall N . (member(N, V__fml:q) -> __votes(V__fml:n, N)))
+
+Action postconditions:
+
+	ext:recv_vote:
+		(forall V026, V127 . (votes(V026, V127) <-> (((V026 = V__fml:n) & (V127 = V__fml:sender)) ? True : __votes(V026, V127))))
+
+	ext:decide:
+		(forall V1, V025 . (decided(V025, V1) <-> (((V025 = V__fml:n) & (V1 = V__fml:v)) ? True : __decided(V025, V1))))
+
+	ext:send_vote:
+		(forall X1, X0 . (~vote_request_msg(X0, X1) | __vote_request_msg(X0, X1) | (X1 = V__fml:dst)))
+		(forall X1, X0 . (vote_request_msg(X0, X1) | ~__vote_request_msg(X0, X1) | (X0 = V__fml:src)))
+		(forall X1, X0 . (vote_request_msg(X0, X1) | ~__vote_request_msg(X0, X1) | (X1 = V__fml:dst)))
+		(forall V028, V129 . (vote_msg(V028, V129) <-> (((V028 = V__fml:src) & (V129 = V__fml:dst)) ? True : __vote_msg(V028, V129))))
+		(forall V030 . (voted(V030) <-> ((V030 = V__fml:src) ? True : __voted(V030))))
+		(forall X1, X0 . (~vote_request_msg(X0, X1) | __vote_request_msg(X0, X1) | (X0 = V__fml:src)))
+
+	ext:send_request_vote:
+		(forall V031, V132 . (vote_request_msg(V031, V132) <-> (((V031 = V__fml:src) & (V132 = V__fml:dst)) ? True : __vote_request_msg(V031, V132))))
+
+	ext:become_leader:
+		(forall V024 . (leader(V024) <-> ((V024 = V__fml:n) ? True : __leader(V024))))
+
+Update map:
+	votes ->  ext:recv_vote
+	vote_request_msg ->  ext:send_vote ext:send_vote ext:send_vote ext:send_vote ext:send_request_vote
+	vote_msg ->  ext:send_vote
+	leader ->  ext:become_leader
+	voted ->  ext:send_vote
+	decided ->  ext:decide
+
+stratifying state variables:
+
+stratifying axioms:
+	skolem arc: quorum -> node
+
+stratifying action ext:recv_vote:
+
+stratifying action ext:become_leader:
+
+stratifying action ext:send_vote:
+
+stratifying action ext:decide:
+
+stratifying action ext:send_request_vote:
+
+stratifying property:
+    pos:
+    neg:
+    pos:
+    neg:
+	skolem arc: quorum -> node
+	skolem arc: quorum -> quorum
+	cycle detected
+    pos:
+    neg:
+    pos:
+    neg:
+    pos:
+    neg:
+    pos:
+    neg:
+	(epr: False)
+
+stratifying helpers:
+
+Arcs:
+	quorum -> node quorum
+
+EPR: False
+-----------------------------------------------------------------
+	(gen: prefer_epr)
+-----------------------------------------------------------------
+	(found #5 actions)
+adding #5 noops to action ext:recv_vote
+	noop(vote_request_msg)
+	noop(vote_msg)
+	noop(leader)
+	noop(voted)
+	noop(decided)
+adding #5 noops to action ext:become_leader
+	noop(votes)
+	noop(vote_request_msg)
+	noop(vote_msg)
+	noop(voted)
+	noop(decided)
+adding #3 noops to action ext:send_vote
+	noop(votes)
+	noop(leader)
+	noop(decided)
+adding #5 noops to action ext:decide
+	noop(votes)
+	noop(vote_request_msg)
+	noop(vote_msg)
+	noop(leader)
+	noop(voted)
+adding #5 noops to action ext:send_request_vote
+	noop(votes)
+	noop(vote_msg)
+	noop(leader)
+	noop(voted)
+	noop(decided)
+-----------------------------------------------------------------
+Init #1
+	((forall V116, V015 . ~__vote_request_msg(V015, V116)) & (forall V017 . ~__voted(V017)) & (forall V018, V119 . ~__vote_msg(V018, V119)) & (forall V020, V121 . ~__votes(V020, V121)) & (forall V022 . ~__leader(V022)) & (forall V1, V023 . ~__decided(V023, V1)))
+		with variables frozenset([__votes, __vote_request_msg, __vote_msg, __leader, __voted, __decided])
+
+Axioms #1
+	(forall Q1, Q2 . (exists N . (member(N, Q1) & member(N, Q2))))
+		with variables frozenset([member])
+
+Actions #6
+	0:	ext:recv_vote (en: en_ext:recv_vote)	(((forall V026, V127 . (...(..., ...) <-> (... ? ... : ...))) & __vote_msg(V__fml:sender, V__fml:n)) & (forall 1:node, 2:node . (__vote_request_msg(1:node, 2:node) <-> vote_request_msg(1:node, 2:node))) & (forall 1:node, 2:node . (__vote_msg(1:node, 2:node) <-> vote_msg(1:node, 2:node))) & (forall 1:node . (__leader(1:node) <-> leader(1:node))) & (forall 1:node . (__voted(1:node) <-> voted(1:node))) & (forall 1:node, 2:value . (__decided(1:node, 2:value) <-> decided(1:node, 2:value))))
+		with variables frozenset([V__fml:n, __votes, __vote_request_msg, __vote_msg, __leader, __voted, __decided, votes, vote_request_msg, vote_msg, leader, voted, decided, V__fml:sender])
+	1:	ext:become_leader (en: en_ext:become_leader)	(((forall V024 . (...(...) <-> (... ? ... : ...))) & (forall N . (...(..., ...) -> ...(..., ...)))) & (forall 1:node, 2:node . (__votes(1:node, 2:node) <-> votes(1:node, 2:node))) & (forall 1:node, 2:node . (__vote_request_msg(1:node, 2:node) <-> vote_request_msg(1:node, 2:node))) & (forall 1:node, 2:node . (__vote_msg(1:node, 2:node) <-> vote_msg(1:node, 2:node))) & (forall 1:node . (__voted(1:node) <-> voted(1:node))) & (forall 1:node, 2:value . (__decided(1:node, 2:value) <-> decided(1:node, 2:value))))
+		with variables frozenset([member, __votes, __vote_request_msg, __vote_msg, __leader, __voted, __decided, votes, vote_request_msg, vote_msg, leader, voted, decided, V__fml:n, V__fml:q])
+	2:	ext:send_vote (en: en_ext:send_vote)	(((forall V028, V129 . (...(..., ...) <-> (... ? ... : ...))) & (forall V030 . (...(...) <-> (... ? ... : ...))) & ~__voted(V__fml:src) & __vote_request_msg(V__fml:dst, V__fml:src) & (forall X1, X0 . (~... | ...(..., ...) | (... = ...))) & (forall X1, X0 . (~... | ...(..., ...) | (... = ...))) & (forall X1, X0 . (...(..., ...) | ~... | (... = ...))) & (forall X1, X0 . (...(..., ...) | ~... | (... = ...)))) & (forall 1:node, 2:node . (__votes(1:node, 2:node) <-> votes(1:node, 2:node))) & (forall 1:node . (__leader(1:node) <-> leader(1:node))) & (forall 1:node, 2:value . (__decided(1:node, 2:value) <-> decided(1:node, 2:value))))
+		with variables frozenset([V__fml:dst, V__fml:src, __votes, __vote_request_msg, __vote_msg, __leader, __voted, __decided, votes, vote_request_msg, vote_msg, leader, voted, decided])
+	3:	ext:decide (en: en_ext:decide)	(((forall V1, V025 . (...(..., ...) <-> (... ? ... : ...))) & __leader(V__fml:n) & (forall V . ~...(..., ...))) & (forall 1:node, 2:node . (__votes(1:node, 2:node) <-> votes(1:node, 2:node))) & (forall 1:node, 2:node . (__vote_request_msg(1:node, 2:node) <-> vote_request_msg(1:node, 2:node))) & (forall 1:node, 2:node . (__vote_msg(1:node, 2:node) <-> vote_msg(1:node, 2:node))) & (forall 1:node . (__leader(1:node) <-> leader(1:node))) & (forall 1:node . (__voted(1:node) <-> voted(1:node))))
+		with variables frozenset([V__fml:v, __votes, __vote_request_msg, __vote_msg, __leader, __voted, __decided, votes, vote_request_msg, vote_msg, leader, voted, decided, V__fml:n])
+	4:	ext:send_request_vote (en: en_ext:send_request_vote)	((forall V031, V132 . (vote_request_msg(V031, V132) <-> ((... & ...) ? True : ...(..., ...)))) & (forall 1:node, 2:node . (__votes(1:node, 2:node) <-> votes(1:node, 2:node))) & (forall 1:node, 2:node . (__vote_msg(1:node, 2:node) <-> vote_msg(1:node, 2:node))) & (forall 1:node . (__leader(1:node) <-> leader(1:node))) & (forall 1:node . (__voted(1:node) <-> voted(1:node))) & (forall 1:node, 2:value . (__decided(1:node, 2:value) <-> decided(1:node, 2:value))))
+		with variables frozenset([V__fml:dst, V__fml:src, __votes, __vote_request_msg, __vote_msg, __leader, __voted, __decided, votes, vote_request_msg, vote_msg, leader, voted, decided])
+	5:	noop (en: en_noop)	((forall 1:node, 2:node . (__votes(1:node, 2:node) <-> votes(1:node, 2:node))) & (forall 1:node, 2:node . (__vote_request_msg(1:node, 2:node) <-> vote_request_msg(1:node, 2:node))) & (forall 1:node, 2:node . (__vote_msg(1:node, 2:node) <-> vote_msg(1:node, 2:node))) & (forall 1:node . (__leader(1:node) <-> leader(1:node))) & (forall 1:node . (__voted(1:node) <-> voted(1:node))) & (forall 1:node, 2:value . (__decided(1:node, 2:value) <-> decided(1:node, 2:value))))
+		with variables frozenset([__votes, __vote_request_msg, __vote_msg, __leader, __voted, __decided, votes, vote_request_msg, vote_msg, leader, voted, decided])
+
+Properties #6
+	(forall N0, V0 . (__decided(N0, V0) -> __leader(N0)))
+		with variables frozenset([__leader, __decided])
+	(exists Q0 . (forall N0, Q2, N1, N2 . (((... | ...) & ...(...) & ...(..., ...)) -> (...(..., ...) | ...(..., ...)))))
+		with variables frozenset([__leader, member, __votes])
+	(forall V1, V2, N1, N2 . ((__decided(N1, V1) & __decided(N2, V2)) -> (V1 = V2)))
+		with variables frozenset([__decided])
+	(forall N0, N1 . (__votes(N0, N1) -> __vote_msg(N1, N0)))
+		with variables frozenset([__votes, __vote_msg])
+	(forall N0, N1, N2 . ((__vote_msg(N2, N0) & __vote_msg(N2, N1)) -> (N0 = N1)))
+		with variables frozenset([__vote_msg])
+	(forall N0, N1 . (__vote_msg(N1, N0) -> __voted(N1)))
+		with variables frozenset([__vote_msg, __voted])
+
+Variables #19
+	V__fml:dst of type node
+	V__fml:src of type node
+	member of type node -> quorum -> Bool
+	V__fml:sender of type node
+	__votes of type node -> node -> Bool
+	__vote_request_msg of type node -> node -> Bool
+	__vote_msg of type node -> node -> Bool
+	__leader of type node -> Bool
+	__voted of type node -> Bool
+	__decided of type node -> value -> Bool
+	votes of type node -> node -> Bool
+	V__fml:v of type value
+	vote_msg of type node -> node -> Bool
+	vote_request_msg of type node -> node -> Bool
+	voted of type node -> Bool
+	decided of type node -> value -> Bool
+	V__fml:n of type node
+	V__fml:q of type quorum
+	leader of type node -> Bool
+
+State variables #7
+	member of type node -> quorum -> Bool
+	__votes of type node -> node -> Bool
+	__vote_request_msg of type node -> node -> Bool
+	__vote_msg of type node -> node -> Bool
+	__leader of type node -> Bool
+	__voted of type node -> Bool
+	__decided of type node -> value -> Bool
+
+Nex state variables #7
+	member of type node -> quorum -> Bool
+	votes of type node -> node -> Bool
+	vote_request_msg of type node -> node -> Bool
+	vote_msg of type node -> node -> Bool
+	leader of type node -> Bool
+	voted of type node -> Bool
+	decided of type node -> value -> Bool
+
+Global variables #1
+	member of type node -> quorum -> Bool
+
+Ordered variables #0
+
+Nex to pre #6
+	votes <- __votes
+	vote_request_msg <- __vote_request_msg
+	vote_msg <- __vote_msg
+	leader <- __leader
+	voted <- __voted
+	decided <- __decided
+
+Pre to nex #6
+	__votes -> votes
+	__vote_request_msg -> vote_request_msg
+	__vote_msg -> vote_msg
+	__leader -> leader
+	__voted -> voted
+	__decided -> decided
+
+Other variables #6
+	V__fml:dst of type node
+	V__fml:src of type node
+	V__fml:sender of type node
+	V__fml:v of type value
+	V__fml:n of type node
+	V__fml:q of type quorum
+
+Axiom variables #1
+	member
+
+Predicates #0
+
+Helpers #0
+
+Inferences #0
+
+Definitions #0
+
+Trel:
+((en_ext:recv_vote -> (((forall V026, V127 . (votes(V026, V127) <-> (((V026 = V__fml:n) & (V127 = V__fml:sender)) ? True : __votes(V026, V127)))) & __vote_msg(V__fml:sender, V__fml:n)) & (forall 1:node, 2:node . (__vote_request_msg(1:node, 2:node) <-> vote_request_msg(1:node, 2:node))) & (forall 1:node, 2:node . (__vote_msg(1:node, 2:node) <-> vote_msg(1:node, 2:node))) & (forall 1:node . (__leader(1:node) <-> leader(1:node))) & (forall 1:node . (__voted(1:node) <-> voted(1:node))) & (forall 1:node, 2:value . (__decided(1:node, 2:value) <-> decided(1:node, 2:value))))) & (en_ext:become_leader -> (((forall V024 . (leader(V024) <-> ((V024 = V__fml:n) ? True : __leader(V024)))) & (forall N . (member(N, V__fml:q) -> __votes(V__fml:n, N)))) & (forall 1:node, 2:node . (__votes(1:node, 2:node) <-> votes(1:node, 2:node))) & (forall 1:node, 2:node . (__vote_request_msg(1:node, 2:node) <-> vote_request_msg(1:node, 2:node))) & (forall 1:node, 2:node . (__vote_msg(1:node, 2:node) <-> vote_msg(1:node, 2:node))) & (forall 1:node . (__voted(1:node) <-> voted(1:node))) & (forall 1:node, 2:value . (__decided(1:node, 2:value) <-> decided(1:node, 2:value))))) & (en_ext:send_vote -> (((forall V028, V129 . (vote_msg(V028, V129) <-> (((V028 = V__fml:src) & (V129 = V__fml:dst)) ? True : __vote_msg(V028, V129)))) & (forall V030 . (voted(V030) <-> ((V030 = V__fml:src) ? True : __voted(V030)))) & ~__voted(V__fml:src) & __vote_request_msg(V__fml:dst, V__fml:src) & (forall X1, X0 . (~vote_request_msg(X0, X1) | __vote_request_msg(X0, X1) | (X0 = V__fml:src))) & (forall X1, X0 . (~vote_request_msg(X0, X1) | __vote_request_msg(X0, X1) | (X1 = V__fml:dst))) & (forall X1, X0 . (vote_request_msg(X0, X1) | ~__vote_request_msg(X0, X1) | (X0 = V__fml:src))) & (forall X1, X0 . (vote_request_msg(X0, X1) | ~__vote_request_msg(X0, X1) | (X1 = V__fml:dst)))) & (forall 1:node, 2:node . (__votes(1:node, 2:node) <-> votes(1:node, 2:node))) & (forall 1:node . (__leader(1:node) <-> leader(1:node))) & (forall 1:node, 2:value . (__decided(1:node, 2:value) <-> decided(1:node, 2:value))))) & (en_ext:decide -> (((forall V1, V025 . (decided(V025, V1) <-> (((V025 = V__fml:n) & (V1 = V__fml:v)) ? True : __decided(V025, V1)))) & __leader(V__fml:n) & (forall V . ~__decided(V__fml:n, V))) & (forall 1:node, 2:node . (__votes(1:node, 2:node) <-> votes(1:node, 2:node))) & (forall 1:node, 2:node . (__vote_request_msg(1:node, 2:node) <-> vote_request_msg(1:node, 2:node))) & (forall 1:node, 2:node . (__vote_msg(1:node, 2:node) <-> vote_msg(1:node, 2:node))) & (forall 1:node . (__leader(1:node) <-> leader(1:node))) & (forall 1:node . (__voted(1:node) <-> voted(1:node))))) & (en_ext:send_request_vote -> ((forall V031, V132 . (vote_request_msg(V031, V132) <-> (((V031 = V__fml:src) & (V132 = V__fml:dst)) ? True : __vote_request_msg(V031, V132)))) & (forall 1:node, 2:node . (__votes(1:node, 2:node) <-> votes(1:node, 2:node))) & (forall 1:node, 2:node . (__vote_msg(1:node, 2:node) <-> vote_msg(1:node, 2:node))) & (forall 1:node . (__leader(1:node) <-> leader(1:node))) & (forall 1:node . (__voted(1:node) <-> voted(1:node))) & (forall 1:node, 2:value . (__decided(1:node, 2:value) <-> decided(1:node, 2:value))))) & (en_noop -> ((forall 1:node, 2:node . (__votes(1:node, 2:node) <-> votes(1:node, 2:node))) & (forall 1:node, 2:node . (__vote_request_msg(1:node, 2:node) <-> vote_request_msg(1:node, 2:node))) & (forall 1:node, 2:node . (__vote_msg(1:node, 2:node) <-> vote_msg(1:node, 2:node))) & (forall 1:node . (__leader(1:node) <-> leader(1:node))) & (forall 1:node . (__voted(1:node) <-> voted(1:node))) & (forall 1:node, 2:value . (__decided(1:node, 2:value) <-> decided(1:node, 2:value))))) & (en_ext:recv_vote | en_ext:become_leader | en_ext:send_vote | en_ext:decide | en_ext:send_request_vote | en_noop) & (~en_ext:recv_vote | ~en_ext:become_leader) & (~en_ext:recv_vote | ~en_ext:send_vote) & (~en_ext:recv_vote | ~en_ext:decide) & (~en_ext:recv_vote | ~en_ext:send_request_vote) & (~en_ext:recv_vote | ~en_noop) & (~en_ext:become_leader | ~en_ext:send_vote) & (~en_ext:become_leader | ~en_ext:decide) & (~en_ext:become_leader | ~en_ext:send_request_vote) & (~en_ext:become_leader | ~en_noop) & (~en_ext:send_vote | ~en_ext:decide) & (~en_ext:send_vote | ~en_ext:send_request_vote) & (~en_ext:send_vote | ~en_noop) & (~en_ext:decide | ~en_ext:send_request_vote) & (~en_ext:decide | ~en_noop) & (~en_ext:send_request_vote | ~en_noop))
+-----------------------------------------------------------------
+(enumsort) node <-> node:e0:
+	[ NODE0, NODE1, ] <-> [ n0, n1, ]
+(enumsort) quorum <-> quorum:e0:
+	[ QUORUM0, QUORUM1, ] <-> [ q0, q1, ]
+(enumsort) value <-> value:e0:
+	[ VALUE0, VALUE1, ] <-> [ v0, v1, ]
+	dep_height[q0] = 0
+	dep_height[q1] = 1
+	dep_height[n0] = 100
+	dep_height[n1] = 101
+	dep_height[v0] = 200
+	dep_height[v1] = 201
+(use_wires: False)
+
+Checking property...
+
+@     4s  Storing init values:
+@     4s  Init -> SAT
+####################MODEL PRINT: ####################
+####################END PRINT MODEL:####################
+(one of the initial states)
+	member(n0, q0)
+	member(n0, q1)
+	~decided(n0, v0)
+	~decided(n0, v1)
+	~decided(n1, v0)
+	~decided(n1, v1)
+	~leader(n0)
+	~leader(n1)
+	~vote_msg(n0, n0)
+	~vote_msg(n0, n1)
+	~vote_msg(n1, n0)
+	~vote_msg(n1, n1)
+	~vote_request_msg(n0, n0)
+	~vote_request_msg(n0, n1)
+	~vote_request_msg(n1, n0)
+	~vote_request_msg(n1, n1)
+	~voted(n0)
+	~voted(n1)
+	~votes(n0, n0)
+	~votes(n0, n1)
+	~votes(n1, n0)
+	~votes(n1, n1)
+	~member(n1, q0)
+	~member(n1, q1)
+
+@     4s  F[0] /\ !P -> UNSAT
+@     4s  F[0] /\ T /\ !P+ -> UNSAT
+Frames: #1
+	F[0]: #1
+		((forall N0_3, N0_4 . ~vote_request_msg(N0_4, N0_3)) & (forall N0_2 . ~voted(N0_2)) & (forall N0_1, N0 . ~vote_msg(N0_1, N0)) & (forall N0_8, N0_7 . ~votes(N0_8, N0_7)) & (forall N0_6 . ~leader(N0_6)) & (forall V0, N0_5 . ~decided(N0_5, V0)))
+@     4s  
+Adding frame 1...
+@     4s  F[1] /\ T /\ !P+ -> UNSAT
+Frames: #2
+	F[0]: #1
+		((forall N0_3, N0_4 . ~vote_request_msg(N0_4, N0_3)) & (forall N0_2 . ~voted(N0_2)) & (forall N0_1, N0 . ~vote_msg(N0_1, N0)) & (forall N0_8, N0_7 . ~votes(N0_8, N0_7)) & (forall N0_6 . ~leader(N0_6)) & (forall V0, N0_5 . ~decided(N0_5, V0)))
+	F[1]: #0
+@     4s  
+Adding frame 2...
+Trying forwarding F[1]
+@     4s  F[2] /\ T /\ !P+ -> UNSAT
+Frames: #3
+	F[0]: #1
+		((forall N0_3, N0_4 . ~vote_request_msg(N0_4, N0_3)) & (forall N0_2 . ~voted(N0_2)) & (forall N0_1, N0 . ~vote_msg(N0_1, N0)) & (forall N0_8, N0_7 . ~votes(N0_8, N0_7)) & (forall N0_6 . ~leader(N0_6)) & (forall V0, N0_5 . ~decided(N0_5, V0)))
+	F[1]: #0
+	F[2]: #0
+@     4s  
+Adding frame 3...
+@     4s  F[1] converged!
+Explored 4 frames
+@     4s  -------------------------------------------------
+### Invariant: #6
+invariant [prop2]	(forall N0_1, N0 . (vote_msg(N0, N0_1) -> voted(N0)))
+invariant [prop1]	(forall N0, V0 . (decided(N0, V0) -> leader(N0)))
+invariant [prop4]	(forall V0, V0_1, N0_2, N0 . ((decided(N0_2, V0) & decided(N0, V0_1)) -> (V0 = V0_1)))
+invariant [prop3]	(exists Q0 . (forall N0, Q0_2, N0_3, N0_1 . ((((Q0_2 = Q0) | member(N0_3, Q0)) & leader(N0) & member(N0_1, Q0_2)) -> (votes(N0, N0_3) | votes(N0, N0_1)))))
+invariant [prop6]	(forall N0_2, N0, N0_1 . ((vote_msg(N0_1, N0_2) & vote_msg(N0_1, N0)) -> (N0_2 = N0)))
+invariant [prop5]	(forall N0_1, N0 . (votes(N0_1, N0) -> vote_msg(N0, N0_1)))
+###
+
+
+Inv_all /\ !P -> UNSAT
+Inv_all /\ T /\ !P+ -> UNSAT
+Checking Init /\ !Inv:
+	#1 prop2  (property) -> UNSAT
+	#2 prop1  (property) -> UNSAT
+	#3 prop4  (property) -> UNSAT
+	#4 prop3  (property) -> UNSAT
+	#5 prop6  (property) -> UNSAT
+	#6 prop5  (property) -> UNSAT
+	Init /\ !Inv: passed
+Checking Inv_all /\ T /\ !Inv+:
+	#1 prop2  (property) -> UNSAT
+	#2 prop1  (property) -> UNSAT
+	#3 prop4  (property) -> UNSAT
+	#4 prop3  (property) -> UNSAT
+	#5 prop6  (property) -> UNSAT
+	#6 prop5  (property) -> UNSAT
+	Inv_all /\ T /\ !Inv+: passed
+
+Finite sorts: #3
+	node -> node:e0: -> [`node:e0:0`, `node:e0:1`]
+	quorum -> quorum:e0: -> [`quorum:e0:0`, `quorum:e0:1`]
+	value -> value:e0: -> [`value:e0:0`, `value:e0:1`]
+
+Invariant is a proof certificate
+@     4s  -------------------------------------------------
+--> The system is safe!
+raw invariant [prop5] (cost: 2, 2F, 0E) 	(forall N0:e0, N1:e0 . (__votes:e0(N0:e0, N1:e0) -> __vote_msg:e0(N1:e0, N0:e0)))
+raw invariant [prop6] (cost: 3, 3F, 0E) 	(forall N0:e0, N1:e0, N2:e0 . ((__vote_msg:e0(N2:e0, N0:e0) & __vote_msg:e0(N2:e0, N1:e0)) -> (N0:e0 = N1:e0)))
+raw invariant [prop3] (cost: 5, 4F, 1E) 	(exists Q0:e0 . (forall N0:e0, Q2:e0, N1:e0, N2:e0 . (((... | ...) & ...(...) & ...(..., ...)) -> (...(..., ...) | ...(..., ...)))))
+raw invariant [prop4] (cost: 4, 4F, 0E) 	(forall V1:e0, V2:e0, N1:e0, N2:e0 . ((__decided:e0(N1:e0, V1:e0) & __decided:e0(N2:e0, V2:e0)) -> (V1:e0 = V2:e0)))
+raw invariant [prop1] (cost: 2, 2F, 0E) 	(forall N0:e0, V0:e0 . (__decided:e0(N0:e0, V0:e0) -> __leader:e0(N0:e0)))
+raw invariant [prop2] (cost: 2, 2F, 0E) 	(forall N0:e0, N1:e0 . (__vote_msg:e0(N1:e0, N0:e0) -> __voted:e0(N1:e0)))
+@     4s  Minimizing certificate of size 6
+@     4s  	prop3	(cost: 5) -> property
+@     4s  	prop4	(cost: 4) -> property
+@     4s  	prop6	(cost: 3) -> property
+@     4s  	prop5	(cost: 2) -> property
+@     4s  	prop1	(cost: 2) -> property
+@     4s  	prop2	(cost: 2) -> property
+	Minimized certificate: 6 -> 6
+@     4s  -------------------------------------------------
+### Proof certificate (required): #6
+invariant [prop3]	(exists Q0 . (forall N0, Q0_2, N0_3, N0_1 . ((((Q0_2 = Q0) | member(N0_3, Q0)) & leader(N0) & member(N0_1, Q0_2)) -> (votes(N0, N0_3) | votes(N0, N0_1)))))
+invariant [prop4]	(forall V0, V0_1, N0_2, N0 . ((decided(N0_2, V0) & decided(N0, V0_1)) -> (V0 = V0_1)))
+invariant [prop6]	(forall N0_2, N0, N0_1 . ((vote_msg(N0_1, N0_2) & vote_msg(N0_1, N0)) -> (N0_2 = N0)))
+invariant [prop5]	(forall N0_1, N0 . (votes(N0_1, N0) -> vote_msg(N0, N0_1)))
+invariant [prop1]	(forall N0, V0 . (decided(N0, V0) -> leader(N0)))
+invariant [prop2]	(forall N0_1, N0 . (vote_msg(N0, N0_1) -> voted(N0)))
+###
+
+	random:	0
+	scalls:	19
+	scalls-finite:	19
+	scalls-infinite:	0
+	scalls-finite-full:	19
+	cti:	0
+	cubes:	1
+	subsumed-calls:	0
+	subsumed-subset:	0
+	subsumed-varintersect-c:	0
+	subsumed-varintersect-e:	0
+	subsumed-query-sat:	0
+	subsumed-query-unsat:	0
+	subsumed-eq:	0
+	unsat-core:	0
+	sz-unsat-core-avg:	-1
+	sz-unsat-min-avg:	-1
+	sz-cube-avg:	24.00
+	antecedent-reduction-sum:	0
+	antecedent-total-sum:	0
+	antecedent-reduction-avg:	-1
+	antecedent-calls:	0
+	antecedent-calls-reduced:	0
+	antecedent-scalls:	0
+	time-q-max-finite-ms:	44
+	time-q-max-finite-core-ms:	0
+	time-q-max-infinite-ms:	0
+	time-q-max-infinite-core-ms:	0
+	time-cti-bad-sat:	0
+	time-cti-bad-unsat:	0
+	time-cti-sat:	0
+	time-cti-unsat:	0
+	time-forward:	0
+	time-antecedent:	0
+	time-subsume:	0
+	time-subsume-query:	0
+	time-inv-check-finite:	0
+	time-inv-check-infinite:	0
+	time-inv-reuse:	0
+	time-minimize:	0
+	time-qf:	0
+	time-sum:	0
+@     4s  -------------------------------------------------
+@     4s  -------------------------------------------------
+sort: node <-> unbounded
+sort: quorum <-> unbounded
+sort: value <-> unbounded
+(use_wires: False)
+@     4s  (finite convergence checks)
+@     4s  (performing finite convergence checks for node)
+(enumsort) node <-> node:e1:
+	[ NODE0, NODE1, NODE2, ] <-> [ n0, n1, n2, ]
+(enumsort) quorum <-> quorum:e1:
+	[ QUORUM0, QUORUM1, QUORUM2, ] <-> [ q0, q1, q2, ]
+(enumsort) value <-> value:e1:
+	[ VALUE0, VALUE1, ] <-> [ v0, v1, ]
+	dep_height[q0] = 0
+	dep_height[q1] = 1
+	dep_height[q2] = 2
+	dep_height[v0] = 100
+	dep_height[v1] = 101
+	dep_height[n0] = 200
+	dep_height[n1] = 201
+	dep_height[n2] = 202
+(use_wires: False)
+@     4s  -------------------------------------------------
+### Invariant: #6
+invariant [prop6]	(forall N1_2, N1, N1_1 . ((vote_msg(N1_1, N1_2) & vote_msg(N1_1, N1)) -> (N1_2 = N1)))
+invariant [prop1]	(forall N1, V1 . (decided(N1, V1) -> leader(N1)))
+invariant [prop2]	(forall N1_1, N1 . (vote_msg(N1, N1_1) -> voted(N1)))
+invariant [prop3]	(exists Q1 . (forall N1, Q1_2, N1_3, N1_1 . ((((Q1_2 = Q1) | member(N1_3, Q1)) & leader(N1) & member(N1_1, Q1_2)) -> (votes(N1, N1_3) | votes(N1, N1_1)))))
+invariant [prop4]	(forall V1, V1_1, N1_2, N1 . ((decided(N1_2, V1) & decided(N1, V1_1)) -> (V1 = V1_1)))
+invariant [prop5]	(forall N1_1, N1 . (votes(N1_1, N1) -> vote_msg(N1, N1_1)))
+###
+
+
+Inv_all /\ !P -> UNSAT
+Inv_all /\ T /\ !P+ -> UNSAT
+Checking Init /\ !Inv:
+	#1 prop6  (property) -> UNSAT
+	#2 prop1  (property) -> UNSAT
+	#3 prop2  (property) -> UNSAT
+	#4 prop5  (property) -> UNSAT
+	#5 prop4  (property) -> UNSAT
+	#6 prop3  (property) -> UNSAT
+	Init /\ !Inv: passed
+Checking Inv_all /\ T /\ !Inv+:
+	#1 prop6  (property) -> UNSAT
+	#2 prop1  (property) -> UNSAT
+	#3 prop2  (property) -> UNSAT
+	#4 prop5  (property) -> UNSAT
+	#5 prop4  (property) -> UNSAT
+	#6 prop3  (property) -> UNSAT
+	Inv_all /\ T /\ !Inv+: passed
+
+Finite sorts: #3
+	node -> node:e1: -> [`node:e1:0`, `node:e1:1`, `node:e1:2`]
+	quorum -> quorum:e1: -> [`quorum:e1:0`, `quorum:e1:1`, `quorum:e1:2`]
+	value -> value:e1: -> [`value:e1:0`, `value:e1:1`]
+
+Invariant is a proof certificate
+@     4s  -------------------------------------------------
+@     4s  (performing finite convergence checks for value)
+(enumsort) node <-> node:e2:
+	[ NODE0, NODE1, NODE2, ] <-> [ n0, n1, n2, ]
+(enumsort) quorum <-> quorum:e2:
+	[ QUORUM0, QUORUM1, QUORUM2, ] <-> [ q0, q1, q2, ]
+(enumsort) value <-> value:e2:
+	[ VALUE0, VALUE1, VALUE2, ] <-> [ v0, v1, v2, ]
+	dep_height[q0] = 0
+	dep_height[q1] = 1
+	dep_height[q2] = 2
+	dep_height[n0] = 100
+	dep_height[n1] = 101
+	dep_height[n2] = 102
+	dep_height[v0] = 200
+	dep_height[v1] = 201
+	dep_height[v2] = 202
+(use_wires: False)
+@     4s  -------------------------------------------------
+### Invariant: #6
+invariant [prop5]	(forall N2, N2_1 . (votes(N2, N2_1) -> vote_msg(N2_1, N2)))
+invariant [prop6]	(forall N2_1, N2_2, N2 . ((vote_msg(N2, N2_1) & vote_msg(N2, N2_2)) -> (N2_1 = N2_2)))
+invariant [prop1]	(forall N2, V2 . (decided(N2, V2) -> leader(N2)))
+invariant [prop4]	(forall V2_2, V2, N2_1, N2 . ((decided(N2_1, V2_2) & decided(N2, V2)) -> (V2_2 = V2)))
+invariant [prop3]	(exists Q2_3 . (forall N2_1, Q2, N2_2, N2 . ((((Q2 = Q2_3) | member(N2_2, Q2_3)) & leader(N2_1) & member(N2, Q2)) -> (votes(N2_1, N2_2) | votes(N2_1, N2)))))
+invariant [prop2]	(forall N2, N2_1 . (vote_msg(N2_1, N2) -> voted(N2_1)))
+###
+
+
+Inv_all /\ !P -> UNSAT
+Inv_all /\ T /\ !P+ -> UNSAT
+Checking Init /\ !Inv:
+	#1 prop5  (property) -> UNSAT
+	#2 prop6  (property) -> UNSAT
+	#3 prop1  (property) -> UNSAT
+	#4 prop4  (property) -> UNSAT
+	#5 prop3  (property) -> UNSAT
+	#6 prop2  (property) -> UNSAT
+	Init /\ !Inv: passed
+Checking Inv_all /\ T /\ !Inv+:
+	#1 prop5  (property) -> UNSAT
+	#2 prop6  (property) -> UNSAT
+	#3 prop1  (property) -> UNSAT
+	#4 prop4  (property) -> UNSAT
+	#5 prop3  (property) -> UNSAT
+	#6 prop2  (property) -> UNSAT
+	Inv_all /\ T /\ !Inv+: passed
+
+Finite sorts: #3
+	node -> node:e2: -> [`node:e2:0`, `node:e2:1`, `node:e2:2`]
+	quorum -> quorum:e2: -> [`quorum:e2:0`, `quorum:e2:1`, `quorum:e2:2`]
+	value -> value:e2: -> [`value:e2:0`, `value:e2:1`, `value:e2:2`]
+
+Invariant is a proof certificate
+@     4s  -------------------------------------------------
+@     4s  (performing finite convergence checks for quorum)
+(enumsort) node <-> node:e3:
+	[ NODE0, NODE1, NODE2, ] <-> [ n0, n1, n2, ]
+(enumsort) quorum <-> quorum:e3:
+	[ QUORUM0, QUORUM1, QUORUM2, ] <-> [ q0, q1, q2, ]
+(enumsort) value <-> value:e3:
+	[ VALUE0, VALUE1, VALUE2, ] <-> [ v0, v1, v2, ]
+	dep_height[n0] = 0
+	dep_height[n1] = 1
+	dep_height[n2] = 2
+	dep_height[q0] = 100
+	dep_height[q1] = 101
+	dep_height[q2] = 102
+	dep_height[v0] = 200
+	dep_height[v1] = 201
+	dep_height[v2] = 202
+(use_wires: False)
+@     4s  -------------------------------------------------
+### Invariant: #6
+invariant [prop2]	(forall N3_1, N3 . (vote_msg(N3, N3_1) -> voted(N3)))
+invariant [prop5]	(forall N3_1, N3 . (votes(N3_1, N3) -> vote_msg(N3, N3_1)))
+invariant [prop4]	(forall V3, V3_1, N3_2, N3 . ((decided(N3_2, V3) & decided(N3, V3_1)) -> (V3 = V3_1)))
+invariant [prop6]	(forall N3_2, N3_1, N3 . ((vote_msg(N3, N3_2) & vote_msg(N3, N3_1)) -> (N3_2 = N3_1)))
+invariant [prop1]	(forall N3, V3 . (decided(N3, V3) -> leader(N3)))
+invariant [prop3]	(exists Q3 . (forall N3, Q3_2, N3_3, N3_1 . ((((Q3_2 = Q3) | member(N3_3, Q3)) & leader(N3) & member(N3_1, Q3_2)) -> (votes(N3, N3_3) | votes(N3, N3_1)))))
+###
+
+
+Inv_all /\ !P -> UNSAT
+Inv_all /\ T /\ !P+ -> UNSAT
+Checking Init /\ !Inv:
+	#1 prop2  (property) -> UNSAT
+	#2 prop5  (property) -> UNSAT
+	#3 prop4  (property) -> UNSAT
+	#4 prop6  (property) -> UNSAT
+	#5 prop1  (property) -> UNSAT
+	#6 prop3  (property) -> UNSAT
+	Init /\ !Inv: passed
+Checking Inv_all /\ T /\ !Inv+:
+	#1 prop2  (property) -> UNSAT
+	#2 prop5  (property) -> UNSAT
+	#3 prop4  (property) -> UNSAT
+	#4 prop6  (property) -> UNSAT
+	#5 prop1  (property) -> UNSAT
+	#6 prop3  (property) -> UNSAT
+	Inv_all /\ T /\ !Inv+: passed
+
+Finite sorts: #3
+	node -> node:e3: -> [`node:e3:0`, `node:e3:1`, `node:e3:2`]
+	quorum -> quorum:e3: -> [`quorum:e3:0`, `quorum:e3:1`, `quorum:e3:2`]
+	value -> value:e3: -> [`value:e3:0`, `value:e3:1`, `value:e3:2`]
+
+Invariant is a proof certificate
+@     4s  -------------------------------------------------
+@     4s  (all finite convergence checks passed)
+(enumsort) node <-> node:e4:
+	[ NODE0, NODE1, ] <-> [ n0, n1, ]
+(enumsort) quorum <-> quorum:e4:
+	[ QUORUM0, ] <-> [ q0, ]
+(enumsort) value <-> value:e4:
+	[ VALUE0, VALUE1, ] <-> [ v0, v1, ]
+	dep_height[q0] = 0
+	dep_height[n0] = 100
+	dep_height[n1] = 101
+	dep_height[v0] = 200
+	dep_height[v1] = 201
+(use_wires: False)
+sort: node <-> unbounded
+sort: quorum <-> unbounded
+sort: value <-> unbounded
+(use_wires: False)
+@     5s  -------------------------------------------------
+### Invariant: #6
+invariant [prop2]	(forall N0, N1 . (vote_msg(N1, N0) -> voted(N1)))
+invariant [prop1]	(forall N0, V0 . (decided(N0, V0) -> leader(N0)))
+invariant [prop5]	(forall N0, N1 . (votes(N0, N1) -> vote_msg(N1, N0)))
+invariant [prop6]	(forall N0, N1, N2 . ((vote_msg(N2, N0) & vote_msg(N2, N1)) -> (N0 = N1)))
+invariant [prop3]	(exists Q0 . (forall N0, Q2, N1, N2 . ((((Q2 = Q0) | member(N1, Q0)) & leader(N0) & member(N2, Q2)) -> (votes(N0, N1) | votes(N0, N2)))))
+invariant [prop4]	(forall V1, V2, N1, N2 . ((decided(N1, V1) & decided(N2, V2)) -> (V1 = V2)))
+###
+
+Printing Init /\ !Inv:
+Printing Inv /\ T /\ !Inv+:
+Checking Init /\ !Inv:
+	#1 prop2  (property) -> UNSAT
+	#2 prop1  (property) -> UNSAT
+	#3 prop5  (property) -> UNSAT
+	#4 prop6  (property) -> UNSAT
+	#5 prop3  (property) -> UNSAT
+	#6 prop4  (property) -> UNSAT
+	Init /\ !Inv: passed
+Checking Inv_all /\ T /\ !Inv+:
+	#1 prop2  (property) -> UNSAT
+	#2 prop1  (property) -> UNSAT
+	#3 prop5  (property) -> UNSAT
+	#4 prop6  (property) -> UNSAT
+	#5 prop3  (property) -> UNSAT
+	#6 prop4  (property) -> UNSAT
+	Inv_all /\ T /\ !Inv+: passed
+
+Finite sorts: #0
+
+Generalized: 6 -> 6
+All generalizable clauses
+
+Inv_all /\ !P -> UNSAT
+Inv_all /\ T /\ !P+ -> UNSAT
+
+Invariant is a proof certificate
+@     5s  -------------------------------------------------
+@     5s  (unbounded induction checks passed)
+	random:	0
+	scalls:	75
+	scalls-finite:	61
+	scalls-infinite:	14
+	scalls-finite-full:	61
+	cti:	0
+	cubes:	1
+	subsumed-calls:	0
+	subsumed-subset:	0
+	subsumed-varintersect-c:	0
+	subsumed-varintersect-e:	0
+	subsumed-query-sat:	0
+	subsumed-query-unsat:	0
+	subsumed-eq:	0
+	unsat-core:	0
+	sz-unsat-core-avg:	-1
+	sz-unsat-min-avg:	-1
+	sz-cube-avg:	24.00
+	antecedent-reduction-sum:	0
+	antecedent-total-sum:	0
+	antecedent-reduction-avg:	-1
+	antecedent-calls:	0
+	antecedent-calls-reduced:	0
+	antecedent-scalls:	0
+	time-q-max-finite-ms:	128
+	time-q-max-finite-core-ms:	0
+	time-q-max-infinite-ms:	110
+	time-q-max-infinite-core-ms:	0
+	time-cti-bad-sat:	0
+	time-cti-bad-unsat:	0
+	time-cti-sat:	0
+	time-cti-unsat:	0
+	time-forward:	0
+	time-antecedent:	0
+	time-subsume:	0
+	time-subsume-query:	0
+	time-inv-check-finite:	1
+	time-inv-check-infinite:	0
+	time-inv-reuse:	0
+	time-minimize:	0
+	time-qf:	0
+	time-sum:	1
+@     5s  -------------------------------------------------
+@     5s  -------------------------------------------------
+### Proof certificate: #6
+invariant [prop4]	(forall V1, V2, N1, N2 . ((decided(N1, V1) & decided(N2, V2)) -> (V1 = V2)))
+invariant [prop3]	(exists Q0 . (forall N0, Q2, N1, N2 . ((((Q2 = Q0) | member(N1, Q0)) & leader(N0) & member(N2, Q2)) -> (votes(N0, N1) | votes(N0, N2)))))
+invariant [prop6]	(forall N0, N1, N2 . ((vote_msg(N2, N0) & vote_msg(N2, N1)) -> (N0 = N1)))
+invariant [prop5]	(forall N0, N1 . (votes(N0, N1) -> vote_msg(N1, N0)))
+invariant [prop1]	(forall N0, V0 . (decided(N0, V0) -> leader(N0)))
+invariant [prop2]	(forall N0, N1 . (vote_msg(N1, N0) -> voted(N1)))
+###
+
+	(invariant file: results/consensus_epr/consensus_epr.inv)
+### Final proof certificate (stats): #6
+invariant [prop4] (4F, 0E, 3A, 1C) 	(forall V1, V2, N1, N2 . ((decided(N1, V1) & decided(N2, V2)) -> (V1 = V2)))
+invariant [prop3] (4F, 1E, 6A, 1C) 	(exists Q0 . (forall N0, Q2, N1, N2 . ((((Q2 = Q0) | member(N1, Q0)) & leader(N0) & member(N2, Q2)) -> (votes(N0, N1) | votes(N0, N2)))))
+invariant [prop6] (3F, 0E, 3A, 1C) 	(forall N0, N1, N2 . ((vote_msg(N2, N0) & vote_msg(N2, N1)) -> (N0 = N1)))
+invariant [prop5] (2F, 0E, 2A, 1C) 	(forall N0, N1 . (votes(N0, N1) -> vote_msg(N1, N0)))
+invariant [prop1] (2F, 0E, 2A, 1C) 	(forall N0, V0 . (decided(N0, V0) -> leader(N0)))
+invariant [prop2] (2F, 0E, 2A, 1C) 	(forall N0, N1 . (vote_msg(N1, N0) -> voted(N1)))
+###
+
+
+stratifying inductive invariant:
+  prop4:
+    pos:
+    neg:
+  prop3:
+    pos:
+    neg:
+	skolem arc: quorum -> node
+	skolem arc: quorum -> quorum
+	cycle detected
+  prop6:
+    pos:
+    neg:
+  prop5:
+    pos:
+    neg:
+  prop1:
+    pos:
+    neg:
+  prop2:
+    pos:
+    neg:
+	(with inv: epr: False)
+
+Arcs:
+	quorum -> node quorum
+
+EPR: False
+-----------------------------------------------------------------
+	random:	0
+@     5s  -------------------------------------------------
+@     5s  -------------------------------------------------

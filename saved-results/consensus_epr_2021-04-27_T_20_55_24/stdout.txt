@@ -1,0 +1,38 @@
+cmd: python ic3po.py -v 5 -o results -n consensus_epr my_examples/consensus_epr/consensus_epr.ivy
+	(mode: ic3po)
+	(reuse: 1)
+	(opt: 1)
+	(const: 1)
+	(wires: 1)
+	(using z3 4.8.10.0 with seed 0)
+	(epr: False)
+	(gen: prefer_epr)
+	(found #5 actions)
+Finitize node ? 	(setting |node| to 2)
+Finitize quorum ? 	(setting |quorum| to 2)
+Finitize value ? 	(setting |value| to 2)
+
+Finite sorts: #3
+	|node| = 2
+	|quorum| = 2
+	|value| = 2
+	(input is not in epr)
+@     4s  0: 1 :1    
+
+
+
+@     4s  Minimizing...
+@     4s  Minimized proof certificate (finite) of size 6.
+@     4s  (finite convergence checks)
+@     4s  	|node| = 3 :	pass
+@     4s  	|value| = 3 :	pass
+@     4s  	|quorum| = 3 :	pass
+@     4s  (all finite convergence checks passed)
+@     5s  (unbounded induction checks passed)
+Finite sorts (final): #3
+	|quorum| = 1
+	|node| = 2
+	|value| = 2
+	(invariant file: results/consensus_epr/consensus_epr.inv)
+@     5s  Property proved. Proof certificate of size 6
+	(with inv: epr: False)
