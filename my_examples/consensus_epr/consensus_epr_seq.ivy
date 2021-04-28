@@ -39,26 +39,6 @@ after init  {
     curr_phase := phase_sendRequestVote;
 }
 
-# action all(i:node, v:value, q1:quorum) = {
-#     # Send out vote requests to some quorum.
-#     vote_request_msg(i, Q) := member(Q,q1);
-
-#     # Send votes from some quorum.
-#     require member(Q, q1) -> ~voted(Q);
-#     vote_msg(Q, i) := member(Q,q1);
-#     voted(Q) := member(Q,q1);
-    
-#     # Potential leader receives votes from the quorum.
-#     votes(i, Q) := member(Q,q1);
-
-#     # Become leader.
-#     leader(i) := true;
-
-#     # Decide on a value.
-#     decided(i,v) := true;
-# }
-# export all
-
 action send_request_vote(src: node, dst: node) = {
     require curr_phase = phase_sendRequestVote;
 
