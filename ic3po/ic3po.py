@@ -2435,57 +2435,61 @@ class PDR(object):
                 #
                 # PRINT STATE VALUE.
                 #
-                print("<"*15, "STATE VALUE", ">"*15)
-                for idx, f in enumerate(self.system.curr._vars):
-                    if ("leader" in str(f) or "currentTerm" in str(f) or "committed" in str(f) or "log" in str(f)):
-                        if "__" in str(f):
-                            # Ignore next state variable copies?
-                            continue
-                        pass
-                    else:
-                        continue
-                    print("* VAR", pretty_print_str(f)) #, idx)
-                    # print(type(f))
-                    s_type = f.symbol_type()
-                    # print("symbol type:", s_type, "| ", s_type.is_function_type())
-                    if s_type.is_function_type():
-                        i_values = sorts[s_type.param_types[0]]
-                        print("\ti_values:", i_values)
-                        for i in i_values:
-                            if (len(s_type.param_types) == 1):
-                                args = [i]
-                                # print("args:",args)
+                # print("<"*15, "STATE VALUE", ">"*15)
+                # for idx, f in enumerate(self.system.curr._vars):
+                #     if ("leader" in str(f) or "currentTerm" in str(f) or "committed" in str(f) or "log" in str(f)):
+                #         # if "__" not in str(f):
+                #         #     # Ignore next state variable copies?
+                #         #     continue
+                #         pass
+                #     else:
+                #         continue
+                #     nextvar = ("__" not in str(f))
+                #     varstr = pretty_print_str(f)
+                #     if nextvar:
+                #         varstr += "'"
+                #     print("* VAR", varstr) #, idx)
+                #     # print(type(f))
+                #     s_type = f.symbol_type()
+                #     # print("symbol type:", s_type, "| ", s_type.is_function_type())
+                #     if s_type.is_function_type():
+                #         i_values = sorts[s_type.param_types[0]]
+                #         print("\ti_values:", i_values)
+                #         for i in i_values:
+                #             if (len(s_type.param_types) == 1):
+                #                 args = [i]
+                #                 # print("args:",args)
 
-                                fn = Function(f, args)
-                                value = self.get_state_value(fn, model)
+                #                 fn = Function(f, args)
+                #                 value = self.get_state_value(fn, model)
 
-                                # print("rawval:", value)
-                                ret = self.get_relation_value(f, args, model)
-                                rval = model.get_value(ret)
-                                # print("RET:",ret)
-                                print("\tRVAL:",pretty_print_str(f)+"("+pretty_print_str(i)+") =",pretty_print_str(value))
-                            elif (len(s_type.param_types) == 2):
-                                j_values = sorts[s_type.param_types[1]]
-                                print("\tj_values:", j_values)
-                                for j in j_values:
-                                    args = [i, j]
-                                    # print("args:",args)
+                #                 # print("rawval:", value)
+                #                 ret = self.get_relation_value(f, args, model)
+                #                 rval = model.get_value(ret)
+                #                 # print("RET:",ret)
+                #                 print("\tRVAL:",pretty_print_str(f)+"("+pretty_print_str(i)+") =",pretty_print_str(value))
+                #             elif (len(s_type.param_types) == 2):
+                #                 j_values = sorts[s_type.param_types[1]]
+                #                 print("\tj_values:", j_values)
+                #                 for j in j_values:
+                #                     args = [i, j]
+                #                     # print("args:",args)
 
-                                    fn = Function(f, args)
-                                    value = self.get_state_value(fn, model)
+                #                     fn = Function(f, args)
+                #                     value = self.get_state_value(fn, model)
 
-                                    ret = self.get_relation_value(f, args, model)
-                                    # print(ret)
-                                    rval = model.get_value(ret)
-                                    print("\tRVAL:",pretty_print_str(f),"("+pretty_print_str(i)+","+pretty_print_str(j)+") =",pretty_print_str(value))
+                #                     ret = self.get_relation_value(f, args, model)
+                #                     # print(ret)
+                #                     rval = model.get_value(ret)
+                #                     print("\tRVAL:",pretty_print_str(f),"("+pretty_print_str(i)+","+pretty_print_str(j)+") =",pretty_print_str(value))
 
 
-                    # try:
-                    #     v = self.get_state_value(f, model)
-                    #     print(v)
-                    # except:
-                    #     pass
-                print("-"*15, "END STATE VALUE", "-"*15)
+                #     # try:
+                #     #     v = self.get_state_value(f, model)
+                #     #     print(v)
+                #     # except:
+                #     #     pass
+                # print("-"*15, "END STATE VALUE", "-"*15)
 
             if self.random > 3:
                 random.shuffle(conditions)
