@@ -36,7 +36,7 @@ after init  {
 	votes(N1, N2) := false;
 	leader(N1) := false;
 	decided(N, V) := false;
-    curr_phase := phase_sendRequestVote;
+  curr_phase := phase_sendRequestVote;
 }
 
 action send_request_vote(src: node, dst: node) = {
@@ -44,13 +44,6 @@ action send_request_vote(src: node, dst: node) = {
 
     vote_request_msg(src, dst) := true;
 }
-
-# action send_request_vote(src: node, q: quorum) = {
-#     require curr_phase = phase_sendRequestVote;
-
-#     # vote_request_msg(src, dst) := true;
-#     vote_request_msg(src, Q) := member(Q,q);
-# }
 
 action send_vote(src: node, dst: node) = {
   require curr_phase = phase_sendVote;
