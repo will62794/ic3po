@@ -31,11 +31,15 @@ after init  {
   require (forall N0, N1 . (vote_msg(N0, N1) -> voted(N0)));
 
   # The invariant of the 'recvVote' phase holds.
-  require forall I,J. votes(I,J) -> vote_msg(J,I);
+  require (forall I, J, S . ((votes(I, S) & votes(J, S)) -> (I = J)));
+  require (forall N0, N1, N2 . ((vote_msg(N1, N2) & vote_msg(N1, N0)) -> (N0 = N2)));
+  require (forall N0, N1 . (votes(N1, N0) -> vote_msg(N0, N1)));
 
   # The invariant of the 'becomeLeader' phase holds.
-  require (forall I, J . ( (leader(I) & leader(J)) -> (I = J)) );
-  require (exists Q0 . (forall N1, N2, N0 . ((leader(N0) & member(N1, Q0) & vote_msg(N1, N2)) -> (N0 = N2))));
+  require (forall I, J . ((leader(I) & leader(J)) -> (I = J)));
+  require (forall N0, N1 . (votes(N1, N0) -> vote_msg(N0, N1)));
+  require (exists Q1 . (forall N2, Q0, N0, N1 . ((((Q0 = Q1) | member(N1, Q1)) & leader(N0) & member(N2, Q0)) -> (votes(N0, N1) | votes(N0, N2)))));
+  require (forall N2, N0, N1 . ((vote_msg(N1, N2) & vote_msg(N1, N0)) -> (N0 = N2)));
 }
 
 action decide(n: node, v: value) = {

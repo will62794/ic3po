@@ -30,7 +30,9 @@ after init  {
   require (forall N0, N1 . (vote_msg(N0, N1) -> voted(N0)));
 
   # The invariant of the 'recvVote' phase holds.
-  require forall I,J. votes(I,J) -> vote_msg(J,I);
+  require (forall I, J, S . ((votes(I, S) & votes(J, S)) -> (I = J)));
+  require (forall N0, N1, N2 . ((vote_msg(N1, N2) & vote_msg(N1, N0)) -> (N0 = N2)));
+  require (forall N0, N1 . (votes(N1, N0) -> vote_msg(N0, N1)));
 }
 
 action become_leader(n: node, q: quorum) = {

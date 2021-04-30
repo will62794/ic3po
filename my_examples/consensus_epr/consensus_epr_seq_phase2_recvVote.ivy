@@ -37,5 +37,7 @@ action recv_vote(n: node, sender: node) = {
 export recv_vote
 
 # (Phase invariant)
-# If a node I recorded a vote from node J, then J must have actually voted for I.
-invariant [safety] (votes(I,J) -> vote_msg(J,I))
+# At most one server can garner the vote of some server 'S'. That is,
+# two different servers I and J could not have recorded a vote from the same
+# server.
+invariant [safety] ~(votes(I,S) & votes(J,S) & ~(I=J)) 

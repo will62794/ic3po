@@ -14,7 +14,7 @@ sizes="$node\n$quorum\n$value"
 
 # PHASE 1
 
-echo "--- RUNNING PHASE 1 ---"
+echo "\n--- RUNNING PHASE 1 ---\n"
 specname="consensus_epr_seq_phase1_sendVote"
 cmd="python ic3po.py -v 5 -o results -n $specname my_examples/consensus_epr/$specname.ivy"
 echo $sizes | $cmd
@@ -28,7 +28,7 @@ echo "" >> $finalinvfile
 # PHASE 2
 
 # The initial finite parameters for ic3po.
-echo "--- RUNNING PHASE 2 ---"
+echo "\n--- RUNNING PHASE 2 ---\n"
 specname="consensus_epr_seq_phase2_recvVote"
 cmd="python ic3po.py -v 5 -o results -n $specname my_examples/consensus_epr/$specname.ivy"
 echo $sizes | $cmd
@@ -43,7 +43,7 @@ echo "" >> $finalinvfile
 # PHASE 3
 
 # The initial finite parameters for ic3po.
-echo "--- RUNNING PHASE 3 ---"
+echo "\n--- RUNNING PHASE 3 ---\n"
 specname="consensus_epr_seq_phase3_becomeLeader"
 cmd="python ic3po.py -v 5 -o results -n $specname my_examples/consensus_epr/$specname.ivy"
 echo $sizes | $cmd
@@ -58,7 +58,7 @@ echo "" >> $finalinvfile
 # PHASE 4
 
 # The initial finite parameters for ic3po.
-echo "--- RUNNING PHASE 4 ---"
+echo "\n--- RUNNING PHASE 4 ---\n"
 specname="consensus_epr_seq_phase4_decide"
 cmd="python ic3po.py -v 5 -o results -n $specname my_examples/consensus_epr/$specname.ivy"
 echo $sizes | $cmd
@@ -81,6 +81,7 @@ echo "" >> $outfile
 
 # Split up version of the invariant.
 cat $finalinvfile >> $outfile
+echo "Saved conjoined phase invariants to $outfile"
 
 
 # Check generated inductive invariant with Ivy.
