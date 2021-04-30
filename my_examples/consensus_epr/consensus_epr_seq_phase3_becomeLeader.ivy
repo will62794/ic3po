@@ -1,0 +1,60 @@
+#lang ivy1.7
+
+type node
+type value
+type quorum
+type phase
+
+relation member(N:node, Q:quorum)
+axiom forall Q1:quorum, Q2:quorum. exists N:node. member(N, Q1) & member(N, Q2)
+
+relation vote_request_msg(N0:node, N1:node)
+relation voted(N:node)
+relation vote_msg(N0:node, N1:node)
+relation votes(N0:node, N1:node)
+relation leader(N:node)
+relation decided(N:node, V:value)
+
+after init  {
+	# vote_request_msg(N1, N2) := false;
+	vote_request_msg(N1, N2) := true;
+  
+	vote_msg(N1, N2) := *;
+  voted(N) := *;
+
+	leader(N1) := false;
+	decided(N, V) := false;
+
+  # The invariant of the previous 'sendVote' phase holds.
+  require (forall I, J, S . (~(I = J) -> (vote_msg(S, I) -> ~vote_msg(S, J))));
+  require (forall N0, N1 . (vote_msg(N0, N1) -> voted(N0)));
+
+  # The invariant of the 'recvVote' phase holds.
+  require forall I,J. votes(I,J) -> vote_msg(J,I);
+}
+
+action become_leader(n: node, q: quorum) = {
+  require member(N, q) -> votes(n, N);
+  leader(n) := true;
+}
+
+export become_leader
+
+# (Phase invariant)
+# Only one node becomes leader.
+invariant [safety] (leader(I) & leader(J)) -> (I=J)
+
+
+# ic3po generated inductive invariant.
+
+### Proof certificate: #4
+invariant [ic3po_prop1]	(forall I, J . ( (leader(I) & leader(J)) -> (I = J)) )
+
+invariant [ic3po_global6]	(forall N1, N2, N0 . ((vote_msg(N2, N1) & vote_msg(N2, N0)) -> (N0 = N1)))
+
+# new predicate.
+invariant [ic3po_other2]	(exists Q0 . (forall N1, N2, N0 . ((leader(N0) & member(N1, Q0) & vote_msg(N1, N2)) -> (N0 = N2))))
+
+
+invariant [ic3po_global3]	(forall N1, N0 . (votes(N1, N0) -> vote_msg(N0, N1)))
+###
