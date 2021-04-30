@@ -16,12 +16,12 @@ relation leader(N:node)
 relation decided(N:node, V:value)
 
 after init  {
-	# vote_request_msg(N1, N2) := false;
 	vote_request_msg(N1, N2) := true;
   
 	vote_msg(N1, N2) := *;
   voted(N) := *;
-
+	votes(N1, N2) := *;
+  
 	leader(N1) := false;
 	decided(N, V) := false;
 
@@ -43,18 +43,3 @@ export become_leader
 # (Phase invariant)
 # Only one node becomes leader.
 invariant [safety] (leader(I) & leader(J)) -> (I=J)
-
-
-# ic3po generated inductive invariant.
-
-### Proof certificate: #4
-invariant [ic3po_prop1]	(forall I, J . ( (leader(I) & leader(J)) -> (I = J)) )
-
-invariant [ic3po_global6]	(forall N1, N2, N0 . ((vote_msg(N2, N1) & vote_msg(N2, N0)) -> (N0 = N1)))
-
-# new predicate.
-invariant [ic3po_other2]	(exists Q0 . (forall N1, N2, N0 . ((leader(N0) & member(N1, Q0) & vote_msg(N1, N2)) -> (N0 = N2))))
-
-
-invariant [ic3po_global3]	(forall N1, N0 . (votes(N1, N0) -> vote_msg(N0, N1)))
-###
