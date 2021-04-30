@@ -11,14 +11,16 @@ specfile=$2
 results_dir="results"
 stdoutfile="$results_dir/stdout.txt"
 
+# timeout_duration="10m"
+# timeout -s 9 $timeout_duration ./ic3po_run.sh $specname $specfile
+
 # Run ic3po.
-timeout_duration="10m"
-timeout -s 9 $timeout_duration ./ic3po_run.sh $specname $specfile
+./ic3po_run.sh $specname $specfile
 
 # Optionally save the results of the run to saved results directory.
 if [[ ! -z "$3" && "$3" == "save" ]]
     then
-        ./ic3po_save.sh consensus_epr
+        ./ic3po_save.sh $specname
     else
         echo "not saving ic3po result."
 fi
