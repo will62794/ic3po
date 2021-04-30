@@ -15,7 +15,7 @@ quorum="2"
 value="2"
 sizes="$node\n$quorum\n$value"
 specname="consensus_epr_seq_phase1_sendVote"
-cmd="python ic3po.py --init 2 -v 5 -o results -n $specname my_examples/consensus_epr/$specname.ivy"
+cmd="python ic3po.py -v 5 -o results -n $specname my_examples/consensus_epr/$specname.ivy"
 echo $sizes | $cmd
 invfile="results/$specname/$specname.inv"
 echo "### (PHASE 1, sendVote)" >> $finalinvfile
@@ -32,7 +32,7 @@ quorum="2"
 value="2"
 sizes="$node\n$quorum\n$value"
 specname="consensus_epr_seq_phase2_recvVote"
-cmd="python ic3po.py --init 2 -v 5 -o results -n $specname my_examples/consensus_epr/$specname.ivy"
+cmd="python ic3po.py -v 5 -o results -n $specname my_examples/consensus_epr/$specname.ivy"
 echo $sizes | $cmd
 invfile="results/$specname/$specname.inv"
 echo "### (PHASE 2, recvVote)" >> $finalinvfile
@@ -49,7 +49,7 @@ quorum="2"
 value="2"
 sizes="$node\n$quorum\n$value"
 specname="consensus_epr_seq_phase3_becomeLeader"
-cmd="python ic3po.py --init 2 -v 5 -o results -n $specname my_examples/consensus_epr/$specname.ivy"
+cmd="python ic3po.py -v 5 -o results -n $specname my_examples/consensus_epr/$specname.ivy"
 echo $sizes | $cmd
 invfile="results/$specname/$specname.inv"
 echo "### (PHASE 3, becomeLeader)" >> $finalinvfile
@@ -66,7 +66,7 @@ quorum="2"
 value="2"
 sizes="$node\n$quorum\n$value"
 specname="consensus_epr_seq_phase4_decide"
-cmd="python ic3po.py --init 2 -v 5 -o results -n $specname my_examples/consensus_epr/$specname.ivy"
+cmd="python ic3po.py -v 5 -o results -n $specname my_examples/consensus_epr/$specname.ivy"
 echo $sizes | $cmd
 invfile="results/$specname/$specname.inv"
 echo "### (PHASE 4, decide)" >> $finalinvfile
