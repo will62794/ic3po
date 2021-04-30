@@ -8,6 +8,7 @@ type server
 type term
 type quorum
 type index
+type phase
 
 #
 # Axioms on the sorts used in the protocol.
@@ -49,6 +50,23 @@ axiom succ(X,Z) -> (indlt(X,Z) & ~(indlt(X,Y) & indlt(Y,Z)))
 # definition succ(x:index,y:index) = (~indlte(y,x) & forall Z:index. ~indlte(Z,x) -> indlte(y,Z))
 # axiom ~succ(indzero, X:index)
 
+
+
+
+
+individual curr_phase : phase
+
+individual phase_becomeLeader : phase
+individual phase_clientRequest : phase
+individual phase_getEntries : phase
+individual phase_commitEntry : phase
+
+axiom ~(phase_becomeLeader = phase_clientRequest) & ~(phase_becomeLeader = phase_getEntries) & ~(phase_becomeLeader = phase_commitEntry) 
+axiom ~(phase_clientRequest = phase_getEntries) & ~(phase_clientRequest = phase_commitEntry)
+axiom ~(phase_getEntries = phase_commitEntry)
+
+
+
 #
 # State variables.
 #
@@ -76,24 +94,13 @@ function loglen(X:server) : index
 relation committed(I:index, T:term)
 
 after init {
-    # leader(X) := false;
-    leader(X) := *;
-    # currentTerm(X) := termzero;
-    currentTerm(X) := *;
-    # loglen(X) := indzero;
-    # log(X,I) := termzero;
-
-    loglen(X) := *;
-    log(X,I) := *;
-
+    leader(X) := false;
+    currentTerm(X) := termzero;
+    loglen(X) := indzero;
+    log(X,I) := termzero;
     committed(I,T) := false;
 
-    # post-condition invariants of becomeLeader phase.
-    require (forall X, Y . ((leader(X) & leader(Y) & ~(X = Y)) -> ~(currentTerm(X) = currentTerm(Y))));
-    require (exists Q0 . (forall T1, S0, S1, T0 . (((currentTerm(S0) = T0) & (currentTerm(S1) = T1) & leader(S1) & member(S0, Q0)) -> lte(T1, T0))));
-
-    # post-condition invariants of clientRequest phase.
-    require ~(loglen(I) = indzero) -> leader(I);
+    curr_phase := phase_becomeLeader;
 }
 
 
@@ -105,6 +112,7 @@ after init {
 
 # Server 'i' becomes leader by using the next term.
 action becomeLeader(i:server, q:quorum, newterm:term) = {
+    require curr_phase = phase_becomeLeader;
     # Must garner a quorum of voters that haven't voted in this term,
     # and primary votes for itself.
     require ~(newterm = termzero);
@@ -129,6 +137,8 @@ action becomeLeader(i:server, q:quorum, newterm:term) = {
 
 # Leader 'i' writes down a new entry.
 action clientRequest(i:server, nextInd:index) = {
+    require curr_phase = phase_clientRequest;
+
     require leader(i);
     # require succ(loglen(i), nextInd);
     # require indlt(loglen(i),nextInd); 
@@ -139,6 +149,8 @@ action clientRequest(i:server, nextInd:index) = {
 
 # Server 'i' sends a log entry to server 'j'.
 action getEntries(i:server, j:server, nextInd:index) = {
+    require curr_phase = phase_getEntries;
+
     require ~leader(i); # only allow secondaries to replicate entries.
     require ~(indzero = loglen(i)); # i cannot have an empty log.
     require indlt(loglen(j), loglen(i)); # i should have a longer log than j.
@@ -154,6 +166,8 @@ action getEntries(i:server, j:server, nextInd:index) = {
 
 # Leader i commits its latest entry.
 action commitEntry(i:server, q:quorum) = {
+    require curr_phase = phase_commitEntry;
+
     require leader(i);
     require ~(loglen(i) = indzero);
     require member(i,q);
@@ -164,10 +178,26 @@ action commitEntry(i:server, q:quorum) = {
     committed(loglen(i), log(i, loglen(i))) := true;
 }
 
-# export becomeLeader
-# export clientRequest
+export becomeLeader
+export clientRequest
 export getEntries
-# export commitEntry
+export commitEntry
+
+action next_phase1 = {
+    require curr_phase = phase_becomeLeader;
+    curr_phase := phase_clientRequest;
+}
+action next_phase2 = {
+    require curr_phase = phase_clientRequest;
+    curr_phase := phase_getEntries;
+}
+action next_phase3 = {
+    require curr_phase = phase_getEntries;
+    curr_phase := phase_commitEntry;
+}
+export next_phase1
+export next_phase2
+export next_phase3
 
 #
 # Some basic lemma invariants of Raft.
@@ -180,7 +210,7 @@ export getEntries
 # invariant [client_request_safety] ~(loglen(I) = indzero) -> leader(I)
 
 # The logs of secondaries are prefixes of the logs of some primary.
-invariant [get_entries_safety] forall X. exists Y. (log(X,I) = log(Y,I) & leader(Y) & ~leader(X)) -> ( indlte(loglen(X),loglen(Y)) & ( (indlte(J,loglen(X)) & ~(J=indzero)) -> (log(X,J) = log(Y,J)) ) )
+# invariant [get_entries_safety] forall X. exists Y. (log(X,I) = log(Y,I) & leader(Y) & ~leader(X)) -> ( indlte(loglen(X),loglen(Y)) & ( (indlte(J,loglen(X)) & ~(J=indzero)) -> (log(X,J) = log(Y,J)) ) )
 
 # Terms increase monotonically in a server's log.
 # invariant [monotonic_log_terms] (succ(I,J) & indlte(J, loglen(X))) -> lte(log(X,I),log(X,J))
@@ -190,7 +220,7 @@ invariant [get_entries_safety] forall X. exists Y. (log(X,I) = log(Y,I) & leader
 # invariant [log_matching] (log(X,I) = log(Y,I) & indlt(J,I)) -> (log(X,J) = log(X,J))
 
 # When a leader gets elected, it must have all entries committed in previous terms.
-# invariant [leader_completeness] (committed(I,T) & leader(X) & (lte(T, currentTerm(X)) &  ~(T=currentTerm(X)))) -> log(X,I) = T
+invariant [leader_completeness] (committed(I,T) & leader(X) & (lte(T, currentTerm(X)) &  ~(T=currentTerm(X)))) -> log(X,I) = T
 # invariant [leader_completeness] ( (leader(X) & currentTerm(X)=T) -> exists Q:quorum. member(Y,Q) -> lte(currentTerm(X), currentTerm(Y)) ) & ( (succ(I,J) & indlte(J, loglen(X))) -> lte(log(X,I),log(X,J)) ) & (committed(I,T) & leader(X) & (lte(T, currentTerm(X)) &  ~(T=currentTerm(X)))) -> log(X,I) = T
 # invariant [l1] committed(I,T) -> ~(I = indzero)
 # invariant [l2] committed(I,T) -> exists X. log(X,I)=T
