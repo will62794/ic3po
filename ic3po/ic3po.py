@@ -2956,6 +2956,7 @@ class PDR(object):
 #                         self.extend_cube(iNew, corepre)
                     eprint("### learning cube")
                     self.learn_cube(iNew, corepre, corepre_formula)
+                    eprint("### learned cube")
                     numLearnt += 1
 #                     break
                 assert(numLearnt != 0)
