@@ -2729,7 +2729,14 @@ class PDR(object):
             solver.add_assertion(i, "assume" + str(i))
             
         if result:
+            ####
+            eprint("### (start) solve with model")
+            t0 = time.time()
             cube = self.solve_with_model(solver, TRUE(), assumptions, True)
+            t1 = time.time()
+            dur = (t1-t0)*1000
+            eprint("### (finish) solve with model took: %fms" % dur)
+
             if cube is None:
                 result = False
 #         assert(0)
@@ -2739,7 +2746,13 @@ class PDR(object):
             assert(not result)
             print(time_str(), "\tAns. UNSAT")
             self.update_stat("unsat-core")
+            eprint("### (start) get unsat core")
+            t0 = time.time()
             core = list(self.last_solver.get_unsat_core())
+            t1 = time.time()
+            dur = (t1-t0)*1000
+            eprint("### (finish) get unsat core took: %fms" % dur)
+
 #             print("\nz3 unsat core #%d" % len(core))
 #             for c in core:
 #                 print("\t%s" % c)
@@ -2890,7 +2903,10 @@ class PDR(object):
         while True:
             print(time_str(), "F[%d] /\ T /\ C+ ?" % (i-1))
             push_time()
+            eprint("### solving with core")
             cubepre, muses = self.solve_with_core(i-1, TRUE(), cubeprime)
+            eprint("### done solving with core")
+
             if cubepre is None:
                 assert(len(muses) != 0)
                 self.update_time_stat("time-cti-unsat", pop_time())
@@ -2900,6 +2916,7 @@ class PDR(object):
                     if self.boosting == "none":
                         cubesOut.append((ucore, False))
                     else:
+                        eprint("### symmetry cube.")
                         ucoreQ = symmetry_cube(self, ucore, i-1, True, cubeprime)
                         cubesOut.extend(ucoreQ)
                 assert(len(cubesOut) != 0)
@@ -2937,6 +2954,7 @@ class PDR(object):
     #                     assert(0)
 #                     if fancy:
 #                         self.extend_cube(iNew, corepre)
+                    eprint("### learning cube")
                     self.learn_cube(iNew, corepre, corepre_formula)
                     numLearnt += 1
 #                     break
@@ -2946,7 +2964,7 @@ class PDR(object):
                 cubepreV = self.get_cube_values(cubepre)
                 self.print_cube_values(cubepreV, i-1, cubeV)
 #                 assert(0)
-                
+                eprint("### recursive block")
                 self.update_time_stat("time-cti-sat", pop_time())
                 res2 = self.recursive_block(i-1, cubepre, cubepreV)
                 if res2:

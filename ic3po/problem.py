@@ -217,6 +217,7 @@ def symmetry_cube(self, cube, fIdx, reducePremise, dest=None):
 
     enum2qvar = dict()
 #     for v in cvars:
+    eprint("### symmetry cube point 1.")
     for v in sorted(cvars, key=str):
         enumsort = v.constant_type()
         if self.ordered == "partial" and enumsort in self.system._ordered_sorts:
@@ -546,6 +547,8 @@ def symmetry_cube(self, cube, fIdx, reducePremise, dest=None):
                     if u in qvars:
                         qvars.remove(u)
 
+            eprint("### symmetry cube point 8.")
+
             cubeSet = cubeSet2
             for v in antecedent.values():
                 for c in v:
@@ -671,6 +674,8 @@ def symmetry_cube(self, cube, fIdx, reducePremise, dest=None):
                     fancy = "epr"
                 cubesOut.append((cubeSym, fancy))
                 
+                # eprint("### symmetry cube point 9.")
+
                 if fancy:
                     if len(eqvars2) != 0:
                         cubeSym2 = And(postCube)
@@ -692,12 +697,19 @@ def symmetry_cube(self, cube, fIdx, reducePremise, dest=None):
                             print("\tBoth verions not allowed!")
                             if (self.system.gen == "epr_strict"):
                                 result = True
-                            
+                
+                        eprint("### symmetry cube point 10.")
                         if not result:
                             solver = self.get_framesolver(fIdx)
                             print("(epr-reduction) ", end="")
                             cubeSym_formula = self.get_formula_qf(cubeSym)
+                            eprint("### symmetry cube point 10 - solving apparently expensive formula.")
+                            eprint("### " + pretty_serialize(cubeSym_formula))
+                            t0 = time.time()
                             result = self.solve_formula(solver, cubeSym_formula)
+                            t1 = time.time()
+                            dur = (t1-t0) * 1000
+                            eprint("### symmetry cube point 10 solving took %fms" % dur)
                         if result:
                             print("\tEPR-reduction is not allowed!")
                             cubesOut.pop()
@@ -710,6 +722,7 @@ def symmetry_cube(self, cube, fIdx, reducePremise, dest=None):
                                 cubesOut.append((cubeSym2, "non-epr"))
     #                         assert(0)
 
+        eprint("### symmetry cube point 11.")
         if common.gopts.const > 0:
             for i in range(len(cubesOut)):
                 cubeTop = cubesOut[i]
