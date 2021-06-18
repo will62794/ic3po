@@ -3003,8 +3003,12 @@ class PDR(object):
                     for cl in self.frames[i]:
                         cl_formula = self.get_formula_qf(cl)
                         cl_nex = pre2nex(self, cl_formula)
+                        eprint("### Forwarding solve formula")
+                        t0 = time.time()
                         if not(self.solve_formula(framesolver, cl_nex, True)):
                             forwarded.append((cl, cl_formula))
+                        eprint("### Forwarding solve formula took %fms" % ((time.time() - t0)*1000))
+
                     if len(forwarded) != 0:
                         print("Forwarded #%d to F[%d]" % (len(forwarded), i+1))
                         for cl, cl_formula in forwarded:
