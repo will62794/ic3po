@@ -171,7 +171,7 @@ export next_phase3
 export next_phase4
 
 # safety property:
-# invariant [safety] (decision(N,R,V) -> (exists Q. (member(N,Q) -> vote(N,R,V1))) ) & (decision(N1,R1,V1) & decision(N2,R2,V2)) -> (V1 = V2)
+# invariant [safety] (decision(N1,R1,V1) & decision(N2,R2,V2)) -> (V1 = V2)
 
 # join_round safety:
 # After leaving the join_round phase, if a node has sent a 1b message for round r,
@@ -180,4 +180,25 @@ export next_phase4
 
 
 # phase safety: if a value has been chosen, then it should be present on a quourm in the round.
-invariant [safety] decision(N,R,V) -> (exists Q. (member(I,Q) -> vote(I,R,V)))
+# invariant [safety] decision(N,R,V) -> (exists Q. (member(I,Q) -> vote(I,R,V)))
+
+# if a value has been accepted by a quorum in round R, no proposer in higher round can propose 
+# a different value.
+# invariant [safety] (exists Q. (member(I,Q) -> vote(I,R,V)) & le(R,U) & (R~=U)) -> ~(exists Q1. member(N, Q1) -> one_b(N,U))
+
+
+
+# invariant [egress_inv] (decision(N,R,V) & le(R,U) & (R~=U)) -> ~(  exists Q. (member(N, Q) -> one_b(N,U)) &     )
+
+# ( ~(maxr = none) & (exists N:node. member(N, q) & ~le(r,maxr) & vote(N,maxr,v)) & (forall N:node,MAXR:round,V:value. (member(N, q) & ~le(r,MAXR) & vote(N,MAXR,V)) -> le(MAXR,maxr)) ))
+
+
+# R: current round.
+# U: newer round.
+invariant [egress_inv] (decision(N,R,V) & le(R,U) & (R~=U) & (V2~=V)) -> 
+    ~( exists Q.
+        # ( (MAXR = none & forall N:node,RX:round,VX:value. ~(member(N, Q) & ~le(U,RX) & vote(N,RX,VX)) )  |
+        (  ~(MAXR = none)     &     
+            (exists N:node. member(N, Q) & ~le(U,MAXR) & vote(N,MAXR,V2))    &    
+            (forall N:node,RX:round,VX:value. (member(N, Q) & ~le(U,RX) & vote(N,RX,VX)) -> le(RX,MAXR))  )
+        )

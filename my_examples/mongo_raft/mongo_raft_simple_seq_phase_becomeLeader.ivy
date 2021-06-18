@@ -60,11 +60,10 @@ individual phase_becomeLeader : phase
 individual phase_clientRequest : phase
 individual phase_getEntries : phase
 individual phase_commitEntry : phase
-individual phase_becomeLeader2 : phase
 
-axiom ~(phase_becomeLeader = phase_clientRequest) & ~(phase_becomeLeader = phase_getEntries) & ~(phase_becomeLeader = phase_commitEntry) & ~(phase_becomeLeader = phase_becomeLeader2)
-axiom ~(phase_clientRequest = phase_getEntries) & ~(phase_clientRequest = phase_commitEntry) & ~(phase_clientRequest = phase_becomeLeader2)
-axiom ~(phase_getEntries = phase_commitEntry) & ~(phase_getEntries = phase_becomeLeader2)
+axiom ~(phase_becomeLeader = phase_clientRequest) & ~(phase_becomeLeader = phase_getEntries) & ~(phase_becomeLeader = phase_commitEntry) 
+axiom ~(phase_clientRequest = phase_getEntries) & ~(phase_clientRequest = phase_commitEntry)
+axiom ~(phase_getEntries = phase_commitEntry)
 
 
 
@@ -183,36 +182,10 @@ action commitEntry(i:server, q:quorum) = {
     committed(loglen(i), log(i, loglen(i))) := true;
 }
 
-# Server 'i' becomes leader by using the next term.
-action becomeLeader2(i:server, q:quorum, newterm:term) = {
-    require curr_phase = phase_becomeLeader2;
-    # Must garner a quorum of voters that haven't voted in this term,
-    # and primary votes for itself.
-    require ~(newterm = termzero);
-    require lte(currentTerm(i), newterm) & ~(newterm = currentTerm(i));
-    require member(i,q);
-    require forall X. member(X,q) -> (lte(currentTerm(X), newterm) & ~(currentTerm(X) = newterm));
-    
-    # Log check (TODO)
-    require forall X. member(X,q) -> ( (loglen(X) = indzero) | ( (log(i, loglen(i)) = log(X, loglen(X)) ) & indlt(loglen(i), loglen(X))) | ( lte(log(X, loglen(X)), log(i, loglen(i))) & ~(log(X, loglen(X)) = log(i, loglen(i))) ) );
-
-
-    # Something a bit weaker.
-    # require forall X. member(X,q) -> (loglen(X) = indzero);
-
-    # Try something even stronger for debugging.
-    #require forall X. (loglen(X) = indzero);
-
-    # Update term and state of servers. /
-    currentTerm(J) := newterm if member(J,q) else currentTerm(J);
-    leader(J) := true if J=i else (false if member(J,q) else leader(J));
-}
-
 export becomeLeader
-export clientRequest
-export getEntries
-export commitEntry
-export becomeLeader2
+# export clientRequest
+# export getEntries
+# export commitEntry
 
 action next_phase1 = {
     require curr_phase = phase_becomeLeader;
@@ -226,21 +199,20 @@ action next_phase3 = {
     require curr_phase = phase_getEntries;
     curr_phase := phase_commitEntry;
 }
-action next_phase4 = {
-    require curr_phase = phase_commitEntry;
-    curr_phase := phase_becomeLeader2;
-}
 export next_phase1
-export next_phase2
-export next_phase3
-export next_phase4
+# export next_phase2
+# export next_phase3
 
 #
 # Some basic lemma invariants of Raft.
 #
 
-# invariant [election_safety] (leader(X) & leader(Y) & ~(X=Y)) -> ~(currentTerm(X)=currentTerm(Y))
+invariant [election_safety] (leader(X) & leader(Y) & ~(X=Y)) -> ~(currentTerm(X)=currentTerm(Y))
 # invariant [election_safety_a1] (leader(X) & currentTerm(X)=T) -> exists Q:quorum. member(Y,Q) -> lte(currentTerm(X), currentTerm(Y))
+
+# If a leader is elected, all older terms must be disabled.
+# invariant [election_safety] leader(X) -> ~( exists Q. member(I,Q) -> ~lte(currentTerm(I),currentTerm(X)) )
+
 
 # If a log entry has been written down it must have been by a primary.
 # invariant [client_request_safety] ~(loglen(I) = indzero) -> leader(I)
@@ -256,7 +228,7 @@ export next_phase4
 # invariant [log_matching] (log(X,I) = log(Y,I) & indlt(J,I)) -> (log(X,J) = log(X,J))
 
 # When a leader gets elected, it must have all entries committed in previous terms.
-invariant [leader_completeness] (committed(I,T) & leader(X) & (lte(T, currentTerm(X)) &  ~(T=currentTerm(X)))) -> log(X,I) = T
+# invariant [leader_completeness] (committed(I,T) & leader(X) & (lte(T, currentTerm(X)) &  ~(T=currentTerm(X)))) -> log(X,I) = T
 # invariant [leader_completeness] ( (leader(X) & currentTerm(X)=T) -> exists Q:quorum. member(Y,Q) -> lte(currentTerm(X), currentTerm(Y)) ) & ( (succ(I,J) & indlte(J, loglen(X))) -> lte(log(X,I),log(X,J)) ) & (committed(I,T) & leader(X) & (lte(T, currentTerm(X)) &  ~(T=currentTerm(X)))) -> log(X,I) = T
 # invariant [l1] committed(I,T) -> ~(I = indzero)
 # invariant [l2] committed(I,T) -> exists X. log(X,I)=T
