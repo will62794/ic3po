@@ -1,0 +1,101 @@
+#lang ivy1.7
+
+# Set of processes.
+type proc
+
+# Set of program counter locations.
+type loc
+
+# Represent the set of program counters as distinct values, which we encode as
+# axioms below. This is essentially emulating an enumerated type.
+individual a1 : loc
+individual a2 : loc
+individual a3 : loc
+individual a4 : loc
+individual cs : loc
+individual a5 : loc
+
+axiom ~(a1 = a2) & ~(a1 = a3) & ~(a1 = a4) & ~(a1 = cs) & ~(a1 = a5)
+axiom ~(a2 = a3) & ~(a2 = a4) & ~(a2 = cs) & ~(a2 = a5)
+axiom ~(a3 = a4) & ~(a3 = cs) & ~(a3 = a5)
+axiom ~(a4 = cs) & ~(a4 = a5)
+axiom ~(cs = a5)
+
+#
+# State variables.
+#
+function flag(P:proc) : bool
+function pc(P:proc) : loc
+individual turn:proc
+
+# There are exactly two processes in Peterson's algorithm, so we 
+# state this assumption explicitly.
+axiom (~(X:proc = Y) & ~(X = Z)) -> (Y = Z)
+
+after init{
+    flag(P) := false;
+    # Both processes start at a1.
+    pc(P) := a1;
+}
+
+action a1_action(p:proc, other:proc) = {
+    require pc(p) = a1;
+    require ~(p = other);
+    pc(p) := a2
+}
+
+action a2_action(p:proc) = {
+    require pc(p) = a2;
+    flag(p) := true;
+    pc(p) := a3   
+}
+
+action a3_action(p:proc, other:proc) = {
+    require pc(p) = a3;
+    require ~(p = other); 
+    # Set turn to other process.
+    turn := other;
+    pc(p) := a4;
+}
+
+action a4_action(p:proc, other:proc) = {
+    require pc(p) = a4;
+    require ~(p = other);
+    require ~flag(other) | turn = p;
+    # Enter the critical section.
+    pc(p) := cs;
+}
+
+action cs_action(p:proc) = {
+    require pc(p) = cs;
+    # Exit the critical section.
+    pc(p) := a5; 
+}
+
+action a5_action(p:proc) = {
+    require pc(p) = a5;
+    flag(p) := false;
+    pc(p) := a1 
+}
+
+# Mutual exclusion property. 
+# Both processes cannot be in the critical section simultaneously.
+invariant [invmutex] (pc(P1)=cs & pc(P2)=cs) -> (P1 = P2)
+
+#
+# Human generated inductive strengthening assertions. Commented out
+# to allow testing of IC3PO automatic invariant generation capabilities.
+#
+
+#invariant [invS1] (pc(P)=a3 | pc(P)=a4 | pc(P)=cs | pc(P)=a5) -> flag(P)
+#invariant [invS2] ((pc(P)=a4 | pc(P)=cs | pc(P)=a5) & (turn = P) & ~(P=Q)) -> pc(Q)=a4
+
+export a1_action
+export a2_action
+export a3_action
+export a4_action
+export cs_action
+export a5_action
+
+# Sanity check invariants, for debugging.
+#invariant ~(a4(P) & a4(Q) & ~(P = Q))
