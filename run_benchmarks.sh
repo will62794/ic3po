@@ -1,6 +1,11 @@
+#
+# Run ic3po on all standard benchmarks and record the results.
+#
+
 set -e
-bmfile="benchmark_results.csv"
-echo "protocol,duration_secs,invsize" > $bmfile
+bm_results_file="benchmark_results.csv"
+
+# Function for running a benchmark.
 runbm () {
     bmname=$1
     type=$2
@@ -18,8 +23,11 @@ runbm () {
     num_inv_conjuncts=`grep -v -c "###" $invfile`
 
     echo "Duration secs: $dur"
-    echo "$bmname,$dur,$num_inv_conjuncts" >> benchmark_results.csv
+    echo "$bmname,$dur,$num_inv_conjuncts" >> $bm_results_file
 }
+
+# Initialize the CSV results file.
+echo "protocol,duration_secs,invsize" > $bm_results_file
 
 runbm "tla-consensus" "tla" "Consensus" "2\n2"
 runbm "tla-tcommit" "tla" "TCommit" "2\n2"
@@ -48,14 +56,7 @@ runbm "ex-toy-consensus" "ex" "toy_consensus" "2\n2\n2"
 runbm "pyv-client-server-db-ae" "mypyv" "client_server_db_ae" "2\n2\n2\n2"
 runbm "pyv-hybrid-reliable-broadcast" "mypyv" "hybrid_reliable_broadcast" "2\n2\n2"
 runbm "pyv-firewall" "mypyv" "firewall" "2"
-runbm "ex-majorityset-leader-election" "ex" "majorityset_leader_election" "2\n2"
+runbm "ex-majorityset-leader-election" "ex" "majorityset-leader-election" "2\n2"
 runbm "pyv-consensus-epr" "mypyv" "consensus_epr" "2\n2\n2"
 # runbm "tla" "mongo-logless-reconfig" "2\n2"
 
-
-
-
-# echo "2\n2" | python ic3po.py --opt 0 -v 5 -o results -n lock_server  ivybench/tla/ivy/TCommit.ivy
-
-
-# echo "2\n2" | python ic3po.py --opt 0 -v 5 -o results -n lock_server ivybench/i4/ivy/lock_server.ivy
