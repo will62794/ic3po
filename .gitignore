@@ -18,6 +18,8 @@ ivybench/final/*/logs/*
 */*.fuse_*
 */*.csv
 xtras/fail*.log
+results/
+*.DS_Store
 
 # But not these files
 !.gitignore
