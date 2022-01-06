@@ -1,0 +1,169 @@
+#lang ivy1.8
+# $ ivy_check trace=true mldr.ivy
+
+type state_set
+type nat
+type server
+type ssub # server subset. represents the powerset of server
+
+axiom exists S:server. true # server is nonempty
+
+# might be able to just define state_set explicitly instead
+individual primary : state_set
+individual secondary : state_set
+
+axiom primary ~= secondary
+axiom forall X:state_set. X = primary | X = secondary
+
+individual zero : nat
+axiom zero = X:nat | zero < X
+axiom X:nat < Y & Y < Z -> X < Z
+axiom ~(X:nat < Y & Y < X)
+axiom X:nat < Y | X = Y | Y < X
+
+relation succ(I:nat, J:nat)
+axiom forall I, J, K : nat. succ(I, J) <-> (I < J & (K < I | K > J | K = I | K = J))
+
+individual one : nat
+axiom succ(zero, one)
+
+
+# state variable equivalent
+function current_term(S:server): nat
+function state(S:server) : state_set
+function config_version(S:server) : nat
+function config_term(S:server) : nat
+function config(S:server) : ssub
+
+
+relation member(S:server, C:ssub)
+# two things below shouldn't be necessary?
+#axiom forall C:ssub. forall S:C. member(S,server) # <- what i really want to say
+#axiom forall S:server. exists C:ssub. member(S,C) # not in EPR
+axiom exists C:ssub. forall S:server. member(S,C) # server is a subset of server
+axiom exists C:ssub. exists S:server. forall T:server. (member(T,C) <-> S=T) # each member of server constitutes a subset
+
+relation intersect(C1:ssub, C2:ssub)
+axiom forall C1, C2 : ssub. (exists S:server. member(S,C1) & member(S,C2)) <-> intersect(C1,C2)
+
+relation quorumof(S:ssub, Q:ssub)
+axiom forall C, Q : ssub. quorumof(C,Q) -> (member(S,Q) -> member(S,C)) # quorums are subsets of configs
+axiom forall C, Q1, Q2 : ssub. (quorumof(Q1,C) & quorumof(Q2,C)) -> intersect(Q1,Q2) # quorums of a config intersect
+axiom forall C : ssub. quorumof(C,C) # all configs are quorums of themselves
+
+relation quorums_overlap(C1:ssub, C2:ssub) # a relation on configs (ssub)
+#axiom forall C1, C2 : ssub. (forall Q1, Q2 : ssub. (quorumof(Q1, C1) & quorumof(Q2, C2)) -> intersect(Q1,Q2)) <-> quorums_overlap(C1,C2)
+# doesn't _require_ anything to be in quorums_overlap()
+axiom forall C1, C2, Q1, Q2 : ssub. quorums_overlap(C1,C2) & quorumof(Q1,C1) & quorumof(Q2,C2) -> intersect(Q1,Q2)
+axiom quorums_overlap(C, C)
+
+relation newer_config(S:server, T:server) = config_term(T) < config_term(S) | config_term(T) = config_term(S) & config_version(T) < config_version(S)
+relation older_config(S:server, T:server) = newer_config(T,S)
+relation newer_or_equal_config(S:server, T:server) = newer_config(S,T) | config_term(T) = config_term(S) & config_version(T) = config_version(S)
+relation config_disabled(S:server) = forall Q:ssub. quorumof(config(S),Q) -> exists T:server. member(T,Q) & newer_config(T,S)
+relation active_config(S:server) = exists Q:ssub. exists S:server. quorumof(config(S),Q) & forall T:server. ~(member(T,Q) & newer_config(T,S))
+
+
+after init {
+  current_term(S) := zero;
+  state(S) := secondary;
+  config_version(S) := one;
+  config_term(S) := zero;
+  assume config(S) = config(T);
+}
+
+action reconfig(s:server, conf:ssub, v:nat) = {
+  assume succ(config_version(s), v);
+  assume state(s) = primary;
+  assume exists Q:ssub. forall T:server. # config quorum check
+    quorumof(Q,config(s)) & member(T,Q) -> config_term(s) = config_term(T) & config_version(s) = config_version(T);
+  assume exists Q:ssub. forall T:server. # term quorum check
+    quorumof(Q,config(s)) & member(T,Q) -> current_term(s) = current_term(T);
+  assume quorums_overlap(config(s), conf);
+  assume member(s, conf);
+  
+  config_term(s) := current_term(s);
+  config_version(s) := v;
+  config(s) := conf;
+}
+
+action sendConfig(s:server, t:server) = {
+  assume state(t) = secondary;
+  assume newer_config(s,t);
+  config_version(t) := config_version(s);
+  config_term(t) := config_term(s);
+  config(t) := config(s);
+}
+
+action becomeLeader(s:server, q:ssub, t:nat) = {
+  assume quorumof(q, config(s));
+  assume succ(current_term(s), t);
+  assume member(s, config(s));
+  assume member(s, q);
+  assume member(S, q) -> current_term(S) < t;
+  assume member(T, q) -> newer_or_equal_config(s, T);
+
+  current_term(S) := t if member(S,q) else current_term(S);
+  state(S) := primary if S = s else (secondary if member(S,q) else state(S));
+  config_term(s) := t;
+}
+
+action updateTerms(s:server, t:server) = {
+  assume current_term(s) < current_term(t);
+
+  current_term(s) := current_term(t);
+  state(s) := secondary;
+}
+
+export reconfig
+export sendConfig
+export becomeLeader
+export updateTerms
+
+
+# OnePrimaryPerTerm / election safety
+invariant state(S1) = primary & state(S2) = primary & current_term(S1) = current_term(S2) -> S1 = S2
+
+# PrimaryConfigTermEqualToCurrentTerm
+invariant state(S) = primary -> config_term(S) = current_term(S)
+
+# ConfigVersionAndTermUnique
+invariant config_term(S) = config_term(T) & config_version(S) = config_version(T) -> config(S) = config(T)
+
+# PrimaryInTermContainsNewestConfigOfTerm
+invariant state(P) = primary & config_term(S) = config_term(P) -> (config_version(S) = config_version(P) | config_version(S) < config_version(P))
+
+# ActiveConfigsOverlap
+#invariant forall S, T : server. ~config_disabled(S) & ~config_disabled(T) -> true #quorums_overlap(config(S), config(T))
+#invariant ~config_disabled(S)
+#invariant active_config(S)
+#invariant active_config(S) & active_config(T) -> quorums_overlap(config(S), config(T))
+
+# ActiveConfigsSafeAtTerms
+#invariant forall S, T : server. active_config(T) ->
+  #forall Q:ssub. quorumof(Q,config(T)) ->
+    #exists N:server. member(N,Q) & (config_term(S) = current_term(N) | config_term(S) < current_term(N))
+
+
+# NewerConfigDisablesOlderNonoverlappingConfigs
+#invariant older_config(T, S) & ~quorums_overlap(config(T), config(S)) -> config_disabled(T)
+
+# NewerConfigDisablesTermsOfOlderNonDisabledConfigs
+#invariant newer_or_equal_config(S,T)  & ~config_disabled(T) & quorumof(config(T), Q) ->
+  #exists N:server. (config_term(S) < current_term(N) | config_term(S) = current_term(N))
+
+#invariant config(S) = config(T)
+
+
+
+# false invariants
+#invariant current_term(S) = zero
+#invariant config_term(S) = zero
+#invariant config_version(S) = zero
+
+
+#interpret state_set -> {0,1}
+#interpret nat -> {0,1,2}
+#interpret server -> {0,1,2}
+#interpret ssub -> {0..7} # size = 2^3
+#attribute method = mc
